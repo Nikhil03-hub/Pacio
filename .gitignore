@@ -55,3 +55,4 @@ credentials.json
 *.key
 .credentials
 .vercel
+.venv/
