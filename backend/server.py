@@ -63,9 +63,9 @@ EMERGENT_AUTH_URL = os.environ.get("EMERGENT_AUTH_URL", "https://demobackend.eme
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET")
 GOOGLE_REDIRECT_URI = os.environ.get("GOOGLE_REDIRECT_URI")
-ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@careeros.app")
-ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "careeros2026")
-DEFAULT_DEMO_PASSWORD = os.environ.get("DEFAULT_DEMO_PASSWORD", "careeros2026")
+ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
+DEFAULT_DEMO_PASSWORD = os.environ.get("DEFAULT_DEMO_PASSWORD")
 
 client = None
 if MONGO_URL:
@@ -111,9 +111,11 @@ APTITUDE_PREP_SECTIONS = [
 if FRONTEND_BUILD.exists():
     app.mount("/static", StaticFiles(directory=FRONTEND_BUILD / "static"), name="static")
 
+ALLOWED_ORIGINS = [o.strip() for o in os.environ.get("ALLOWED_ORIGINS", "https://pacio-two.vercel.app").split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r".*",
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"], allow_headers=["*"],
 )
@@ -1265,13 +1267,6 @@ async def _startup():
 @app.get("/api/health")
 async def health():
     return {"status": "ok", "service": "careeros-v2"}
-
-
-@app.post("/api/test/reset-pending")
-async def test_reset_pending():
-    await db.users.update_one({"email": "tpo@vasavi.ac.in"}, {"$set": {"approved": False}})
-    await db.institutions.update_one({"institution_id": "inst_vasavi_pending"}, {"$set": {"approved": False}})
-    return {"ok": True}
 
 
 @app.get("/api/health/deep")
@@ -7087,7 +7082,7 @@ class SavedJobBody(BaseModel):
     url: str
 
 async def fetch_jooble_jobs(keywords: str = "developer", location: str = "India", page: int = 1):
-    jooble_key = os.environ.get("JOOBLE_API_KEY", "a29e9e09-4b4d-4c9d-ad14-48809c6c339f")
+    jooble_key = os.environ.get("JOOBLE_API_KEY")
     url = f"https://jooble.org/api/{jooble_key}"
     payload = {
         "keywords": keywords,
@@ -7128,6 +7123,9 @@ async def fetch_jooble_jobs(keywords: str = "developer", location: str = "India"
                 "source": "CareerOS",
             })
         return normalized
+
+    if not jooble_key:
+        return {"success": True, "source": "CareerOS fallback", "totalCount": 6, "jobs": fallback_jobs(), "warning": "Jooble API key not configured"}
 
     async with httpx.AsyncClient() as client:
         try:
@@ -7178,7 +7176,8 @@ async def fetch_jooble_jobs(keywords: str = "developer", location: str = "India"
                 "jobs": normalized or fallback_jobs()
             }
         except Exception as e:
-            return {"success": True, "source": "CareerOS fallback", "totalCount": 6, "jobs": fallback_jobs(), "warning": str(e)}
+            log.warning("Jooble fetch failed: %s", e)
+            return {"success": True, "source": "CareerOS fallback", "totalCount": 6, "jobs": fallback_jobs(), "warning": "Live job feed temporarily unavailable"}
 
 @app.get("/api/jobs/discover")
 async def discover_jobs(keywords: str = "developer", location: str = "India", page: int = 1, user=Depends(get_session_user)):

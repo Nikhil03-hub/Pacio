@@ -10,7 +10,7 @@ import bcrypt
 import jwt
 from fastapi import Depends, HTTPException, Request
 
-JWT_SECRET = os.environ.get("JWT_SECRET", "careeros-dev-secret-change-me")
+JWT_SECRET = os.environ.get("JWT_SECRET")
 JWT_ALGORITHM = os.environ.get("JWT_ALGORITHM", "HS256")
 JWT_ISSUER = os.environ.get("JWT_ISSUER", "careeros")
 ACCESS_TOKEN_DAYS = int(os.environ.get("ACCESS_TOKEN_DAYS", "7"))
