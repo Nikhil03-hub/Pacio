@@ -158,17 +158,16 @@ class ResetPasswordBody(BaseModel):
 
 
 class RegisterBody(BaseModel):
-    role: Literal["student", "faculty", "recruiter", "tpo"]
+    # Institution (TPO) self-onboarding only. Student/faculty/recruiter accounts
+    # are created automatically on first Google sign-in and land in a pending
+    # state for admin approval instead.
     name: str
     email: EmailStr
-    password: str
-    roll_number: Optional[str] = None
-    department: Optional[str] = None
-    institution_id: Optional[str] = None
-    company_name: Optional[str] = None
-    college_name: Optional[str] = None
+    password: Optional[str] = None
+    college_name: str
     affiliated_university: Optional[str] = None
     partnership_type: Optional[str] = None
+    department: Optional[str] = None
 
 
 # ============== SESSION ==============
@@ -1342,7 +1341,7 @@ async def auth_session(request: Request, response: Response):
         await db.users.update_one({"user_id": user_id}, {"$set": {"name": data.get("name", existing["name"]), "picture": data.get("picture")}})
     else:
         is_admin = email == ADMIN_EMAIL
-        new = _new_user(email=email, name=data.get("name", email), role="super_admin" if is_admin else "tpo",
+        new = _new_user(email=email, name=data.get("name", email), role="super_admin" if is_admin else None,
                         institution_id=None, password=None, approved=is_admin)
         new["picture"] = data.get("picture")
         await db.users.insert_one(new)
@@ -4318,14 +4317,23 @@ async def pending_signups(admin=Depends(require_roles("super_admin"))):
     return {"items": pending}
 
 
+class ApproveUserBody(BaseModel):
+    role: Optional[Literal["institution_admin", "tpo", "faculty", "student", "recruiter"]] = None
+    institution_id: Optional[str] = None
+
+
 @app.post("/api/admin/approve/{user_id}")
-async def approve_user(user_id: str, request: Request, admin=Depends(require_roles("super_admin"))):
+async def approve_user(user_id: str, request: Request, body: ApproveUserBody = ApproveUserBody(), admin=Depends(require_roles("super_admin"))):
     t = await db.users.find_one({"user_id": user_id})
     if not t:
         raise HTTPException(404, "not found")
-    await db.users.update_one({"user_id": user_id}, {"$set": {"approved": True}})
-    if t.get("institution_id"):
-        await db.institutions.update_one({"institution_id": t["institution_id"]},
+    role = body.role or t.get("role")
+    if not role:
+        raise HTTPException(400, "A role must be assigned before approval")
+    institution_id = body.institution_id if body.institution_id is not None else t.get("institution_id")
+    await db.users.update_one({"user_id": user_id}, {"$set": {"approved": True, "role": role, "institution_id": institution_id}})
+    if institution_id:
+        await db.institutions.update_one({"institution_id": institution_id},
                                          {"$set": {"approved": True, "approved_at": datetime.now(timezone.utc).isoformat()}})
     await notify(db, event="account_approved", to_email=t["email"],
                  subject="Your CareerOS access is live",
@@ -4335,10 +4343,10 @@ async def approve_user(user_id: str, request: Request, admin=Depends(require_rol
     await _audit_log(
         "admin.user_approved",
         user=admin,
-        institution_id=t.get("institution_id"),
+        institution_id=institution_id,
         resource="user",
         resource_id=user_id,
-        metadata={"target_email": t.get("email"), "target_role": t.get("role")},
+        metadata={"target_email": t.get("email"), "target_role": role},
         request=request,
     )
     return {"ok": True}
@@ -6089,7 +6097,7 @@ async def google_oauth_callback(request: Request):
         new = _new_user(
             email=email,
             name=name,
-            role="super_admin" if is_admin else "tpo",
+            role="super_admin" if is_admin else None,
             institution_id=None,
             password=None,
             approved=is_admin,
@@ -6227,112 +6235,61 @@ async def auth_refresh(request: Request, response: Response):
 
 @app.post("/api/auth/register")
 async def auth_register(payload: RegisterBody, request: Request, response: Response):
+    # Institution (TPO) self-onboarding only. Creates a pending institution and a
+    # pending tpo user; role is fixed server-side, never trusted from client input.
+    # The registrant then signs in with Google using this same email -
+    # google_oauth_callback matches by email and reuses this same pending record
+    # rather than creating a duplicate. Student/faculty/recruiter accounts are
+    # created automatically on first Google sign-in instead of registering here.
     email = payload.email.lower().strip()
     existing = await db.users.find_one({"email": email})
     if existing:
         raise HTTPException(400, "Email already registered")
-        
-    approved = False
-    inst_id = payload.institution_id
-    
-    if payload.role == "student":
-        if not inst_id:
-            raise HTTPException(400, "Institution ID is required for students")
-        inst = await db.institutions.find_one({"institution_id": inst_id})
-        if not inst:
-            raise HTTPException(404, "Institution not found")
-        if inst.get("approved", True):
-            approved = True
-            
-    elif payload.role == "tpo":
-        if not payload.college_name:
-            raise HTTPException(400, "College name is required for TPO registration")
-        inst_id = f"inst_{uuid.uuid4().hex[:10]}"
-        short = payload.college_name.split()
-        short_name = "".join(w[0] for w in short).upper()[:6] if short else "COLL"
-        await db.institutions.insert_one({
-            "institution_id": inst_id,
-            "name": payload.college_name,
-            "short_name": short_name,
-            "affiliated_university": payload.affiliated_university or "JNTUH",
-            "partnership_type": payload.partnership_type or "CRT",
-            "departments": [payload.department] if payload.department else [],
-            "approved": False,
-            "created_at": datetime.now(timezone.utc).isoformat(),
-        })
-        approved = False
-        
-    elif payload.role == "recruiter":
-        if not payload.company_name:
-            raise HTTPException(400, "Company name is required for recruiters")
-        approved = False
-        
-    elif payload.role == "faculty":
-        if not inst_id:
-            raise HTTPException(400, "Institution ID is required for faculty")
-        approved = False
-        
+
+    if not payload.college_name:
+        raise HTTPException(400, "College name is required for institution registration")
+
+    inst_id = f"inst_{uuid.uuid4().hex[:10]}"
+    short = payload.college_name.split()
+    short_name = "".join(w[0] for w in short).upper()[:6] if short else "COLL"
+    await db.institutions.insert_one({
+        "institution_id": inst_id,
+        "name": payload.college_name,
+        "short_name": short_name,
+        "affiliated_university": payload.affiliated_university or "JNTUH",
+        "partnership_type": payload.partnership_type or "CRT",
+        "departments": [payload.department] if payload.department else [],
+        "approved": False,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    })
+
     new_user_doc = _new_user(
         email=email,
         name=payload.name,
-        role=payload.role,
+        role="tpo",
         institution_id=inst_id,
         password=payload.password,
-        approved=approved,
+        approved=False,
         department=payload.department
     )
-    
-    if payload.role == "recruiter":
-        new_user_doc["company_name"] = payload.company_name
-        await db.recruiters.insert_one({
-            "recruiter_id": new_user_doc["user_id"],
-            "name": payload.name,
-            "company": payload.company_name,
-            "email": email,
-            "created_at": datetime.now(timezone.utc).isoformat()
-        })
-        
-    elif payload.role == "student":
-        await db.students.insert_one({
-            "student_id": new_user_doc["user_id"],
-            "name": payload.name,
-            "email": email,
-            "roll_number": payload.roll_number or f"STU{uuid.uuid4().hex[:6].upper()}",
-            "department": payload.department or "CSE",
-            "institution_id": inst_id,
-            "cgpa": 7.5,
-            "readiness_score": 50,
-            "consistency_score": 50,
-            "placement_status": "unplaced",
-            "skills": [],
-            "created_at": datetime.now(timezone.utc).isoformat()
-        })
 
     await db.users.insert_one(new_user_doc)
     await _audit_log("auth.register", user=new_user_doc, request=request)
-    
+
     await notify(
         db,
         event="auth.register_welcome",
         to_email=email,
         subject="Welcome to CareerOS",
         title="Welcome to CareerOS",
-        body_html=f"Hi {payload.name},<br/><br/>Thank you for registering on CareerOS as a {payload.role}. " + 
-                  ("Your account has been auto-approved and is ready to use!" if approved else "Your account is pending administrator approval.")
+        body_html=f"Hi {payload.name},<br/><br/>Thank you for registering {payload.college_name} on CareerOS. "
+                  "Your account is pending administrator approval. Once approved, sign in with Google using this same email."
     )
-    
-    if approved:
-        access_token = await _create_session(new_user_doc["user_id"], response, request)
-        return {
-            "status": "approved",
-            "user": {k: v for k, v in new_user_doc.items() if k not in ("password_hash", "_id")},
-            "access_token": access_token
-        }
-    else:
-        return {
-            "status": "pending_approval",
-            "message": "Registration successful. Pending admin approval."
-        }
+
+    return {
+        "status": "pending_approval",
+        "message": "Registration successful. Pending admin approval. Sign in with Google using this email once approved.",
+    }
 
 
 @app.get("/api/public/institutions")

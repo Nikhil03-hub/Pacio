@@ -6,6 +6,7 @@ import { Check, X, Bell, Building2, Clock, GraduationCap, ShieldCheck, Users } f
 export default function AdminPanel() {
   const [pending, setPending] = useState([]);
   const [colleges, setColleges] = useState([]);
+  const [selections, setSelections] = useState({});
 
   const load = async () => {
     const [p, c] = await Promise.all([
@@ -18,7 +19,15 @@ export default function AdminPanel() {
 
   useEffect(() => { load().catch(() => toast.error("Admin only")); }, []);
 
-  const approve = async (id) => { await api.post(`/admin/approve/${id}`); toast.success("Approved"); load(); };
+  const approve = async (u) => {
+    const sel = selections[u.user_id] || {};
+    const role = sel.role ?? u.role ?? "";
+    if (!role) { toast.error("Select a role before approving."); return; }
+    const institution_id = sel.institution_id ?? u.institution_id ?? "";
+    await api.post(`/admin/approve/${u.user_id}`, { role, institution_id: institution_id || null });
+    toast.success("Approved");
+    load();
+  };
   const reject = async (id) => { await api.post(`/admin/reject/${id}`); toast.success("Rejected"); load(); };
   const testNotif = async () => { await api.post("/admin/test-notification"); toast.success("Fan-out triggered"); };
 
@@ -87,16 +96,47 @@ export default function AdminPanel() {
                           <div className="font-display text-xl tracking-tight">{u.name}</div>
                           <div className="text-xs text-ink-500">{u.email}</div>
                         </div>
-                        <span className="pill">{u.role}</span>
+                        {u.role ? <span className="pill">{u.role}</span> : <span className="pill bg-bone-200 text-ink-400">unassigned</span>}
                       </div>
-                      <div className="mt-4 grid grid-cols-12 gap-3">
-                        <div className="col-span-12 md:col-span-7 border border-line bg-bone-50 p-3">
-                          <div className="font-mono text-[10px] text-ink-400 tracking-[0.18em]">INSTITUTION</div>
-                          <div className="font-medium mt-1">{u.institution?.name || "Not provided"}</div>
-                          <div className="text-xs text-ink-400">{u.institution?.affiliated_university || ""}</div>
+                      {u.institution?.name && (
+                        <div className="mt-3 text-xs text-ink-400">
+                          Requested institution: <span className="text-ink-700">{u.institution.name}</span>
+                          {u.institution.affiliated_university ? ` · ${u.institution.affiliated_university}` : ""}
                         </div>
-                        <div className="col-span-12 md:col-span-5 flex items-center gap-2 justify-end">
-                          <button onClick={() => approve(u.user_id)} data-testid={`approve-${u.user_id}`} className="btn py-2 px-3 text-xs">
+                      )}
+                      <div className="mt-4 grid grid-cols-12 gap-3">
+                        <div className="col-span-12 md:col-span-4">
+                          <div className="font-mono text-[10px] text-ink-400 tracking-[0.18em]">ROLE</div>
+                          <select
+                            value={selections[u.user_id]?.role ?? u.role ?? ""}
+                            onChange={(e) => setSelections((s) => ({ ...s, [u.user_id]: { ...s[u.user_id], role: e.target.value } }))}
+                            data-testid={`role-select-${u.user_id}`}
+                            className="mt-1 w-full px-2 py-2 border border-line bg-bone-50 text-xs focus:outline-none"
+                          >
+                            <option value="">Select role…</option>
+                            <option value="institution_admin">Institution Admin</option>
+                            <option value="tpo">TPO</option>
+                            <option value="faculty">Faculty</option>
+                            <option value="student">Student</option>
+                            <option value="recruiter">Recruiter</option>
+                          </select>
+                        </div>
+                        <div className="col-span-12 md:col-span-4">
+                          <div className="font-mono text-[10px] text-ink-400 tracking-[0.18em]">INSTITUTION</div>
+                          <select
+                            value={selections[u.user_id]?.institution_id ?? u.institution_id ?? ""}
+                            onChange={(e) => setSelections((s) => ({ ...s, [u.user_id]: { ...s[u.user_id], institution_id: e.target.value } }))}
+                            data-testid={`institution-select-${u.user_id}`}
+                            className="mt-1 w-full px-2 py-2 border border-line bg-bone-50 text-xs focus:outline-none"
+                          >
+                            <option value="">No institution</option>
+                            {colleges.map((c) => (
+                              <option key={c.institution_id} value={c.institution_id}>{c.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="col-span-12 md:col-span-4 flex items-end gap-2 justify-end">
+                          <button onClick={() => approve(u)} data-testid={`approve-${u.user_id}`} className="btn py-2 px-3 text-xs">
                             <Check size={12} /> Approve
                           </button>
                           <button onClick={() => reject(u.user_id)} data-testid={`reject-${u.user_id}`} className="btn btn-ghost py-2 px-3 text-xs">
