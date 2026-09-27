@@ -48,7 +48,7 @@ export default function Login() {
     if (!forgotEmail) return;
     setBusy(true);
     try {
-      await api.post("/api/auth/forgot-password", { email: forgotEmail });
+      await api.post("/auth/forgot-password", { email: forgotEmail });
       toast.success("Password reset email sent!");
       setShowForgot(false);
       setForgotEmail("");

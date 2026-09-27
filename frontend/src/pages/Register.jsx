@@ -31,7 +31,7 @@ export default function Register() {
 
   useEffect(() => {
     if (["student", "faculty"].includes(role)) {
-      api.get("/api/public/institutions")
+      api.get("/public/institutions")
         .then(({ data }) => {
           setInstitutions(data.items || []);
           if (data.items?.length > 0) {
@@ -74,7 +74,7 @@ export default function Register() {
 
     setBusy(true);
     try {
-      const { data } = await api.post("/api/auth/register", payload);
+      const { data } = await api.post("/auth/register", payload);
       if (data.status === "approved") {
         toast.success("Registration successful and approved!");
         // Store session token and redirect

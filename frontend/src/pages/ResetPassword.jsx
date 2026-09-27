@@ -30,7 +30,7 @@ export default function ResetPassword() {
 
     setBusy(true);
     try {
-      await api.post("/api/auth/reset-password", { token, new_password: password });
+      await api.post("/auth/reset-password", { token, new_password: password });
       toast.success("Password reset successfully. Please log in.");
       navigate("/login");
     } catch (err) {
