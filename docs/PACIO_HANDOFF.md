@@ -9,7 +9,7 @@ Current state, what changed, what is blocked, and how to verify it yourself.
 | Repository | `Pacio-Merged`, remote `Nikhil03-hub/pacio-intelligence` (**public**) |
 | Branch | `main`; two local commits added in this work, **not pushed** |
 | Baseline before this work | HEAD `6aa0f44`, clean tree except one untracked audit file |
-| Tests | 24 new hardening tests + 68 legacy tests, all passing on 2026-10-23 |
+| Tests | 103 passing on 2026-10-23: 30 new hardening tests + 73 legacy tests |
 | Frontend build | Compiles clean; 884 kB gzipped JS |
 | Live site | `https://pacio-two.vercel.app` reachable; **not modified** by this work |
 | Sub-product | `../skill-tank-partner-platform` - Next.js/Supabase, has **uncommitted** work |

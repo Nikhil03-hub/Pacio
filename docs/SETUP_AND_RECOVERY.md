@@ -56,9 +56,11 @@ cd Pacio-Merged
 
 | Suite | Command | Result on 2026-10-23 |
 | --- | --- | --- |
-| Hardening (new) | `pytest backend/tests/test_hardening.py` | **24 passed** in ~45 s; runs in-process with `TestClient`, no server needed |
-| Legacy v2 + v21 | `REACT_APP_BACKEND_URL=http://127.0.0.1:8000 pytest backend/tests/test_careeros_v2.py backend/tests/test_careeros_v21.py` | **68 passed** in ~8 min; needs a running server and reaches external services, which is why it is slow |
+| Hardening (new) | `pytest backend/tests/test_hardening.py` | **30 passed** in ~28 s; runs in-process with `TestClient`, no server needed |
+| Legacy v2 + v21 | `REACT_APP_BACKEND_URL=http://127.0.0.1:8000 pytest backend/tests/test_careeros_v2.py backend/tests/test_careeros_v21.py` | **73 passed** in ~6 min; needs a running server and reaches external services, which is why it is slow |
 | Frontend build | `cd frontend && CI=false npm run build` | **Compiled successfully**; 884 kB gzipped JS (BL-20) |
+
+Total: **103 automated tests passing** on 2026-10-23.
 
 There is no CI yet (BL-18) and no browser test (BL-19).
 

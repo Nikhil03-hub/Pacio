@@ -35,8 +35,8 @@ REACT_APP_BACKEND_URL=http://127.0.0.1:8000 .venv/Scripts/python.exe -m pytest b
 cd frontend && CI=false npm run build
 ```
 
-Last full run (2026-10-23): **24 hardening + 68 legacy tests passed**, frontend compiled
-clean.
+Last full run (2026-10-23): **30 hardening + 73 legacy tests passed** (103 total), frontend
+compiled clean.
 
 ## What is real and what is sample
 
