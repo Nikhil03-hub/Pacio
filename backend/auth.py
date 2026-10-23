@@ -109,6 +109,16 @@ async def get_session_user(request: Request):
     user = await db.users.find_one({"user_id": user_id}, {"_id": 0, "password_hash": 0})
     if not user:
         raise HTTPException(401, "User not found")
+    if not user.get("approved", False) and user.get("role") != "super_admin":
+        # A pending account may still read its own identity and submit onboarding, but it
+        # must not reach rosters, analytics, documents or reports. Enforced centrally here
+        # because only require_roles used to check approval, leaving many data routes open.
+        path = request.url.path
+        allowed = (path.startswith("/api/auth/")
+                   or path.startswith("/api/public/")
+                   or path == "/api/signup")
+        if path.startswith("/api/") and not allowed:
+            raise HTTPException(403, "Account pending approval")
     return user
 
 

@@ -17,6 +17,10 @@ from pathlib import Path
 BACKEND = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND))
 
+# Force the in-memory store. A developer's backend/.env may point at a real database,
+# and tests must never write synthetic tenants into it or depend on its prior state.
+os.environ["MONGO_URL"] = ""
+os.environ["DB_NAME"] = "pacio_test_memory"
 os.environ.setdefault("JWT_SECRET", "test-only-secret-not-used-in-production")
 os.environ.setdefault("DB_NAME", "careeros")
 os.environ.setdefault("SEED_DEMO_DATA", "true")
@@ -427,3 +431,27 @@ def test_certificate_id_length_is_bounded(client, tokens):
         json={"cert_id": "X" * 200, "student_name": "n", "program": "p"},
     )
     assert res.status_code == 422
+
+
+# ------------------------------------------------- startup and abuse controls
+
+def test_production_refuses_to_start_without_persistent_storage(monkeypatch):
+    """A production profile without MONGO_URL must fail, not silently drop tenant data."""
+    monkeypatch.setattr(server, "IS_PRODUCTION", True)
+    monkeypatch.setattr(server, "MONGO_URL", None)
+    with pytest.raises(RuntimeError, match="MONGO_URL"):
+        asyncio.run(server._startup())
+
+
+def test_rate_limiter_returns_429_after_the_limit(client, monkeypatch):
+    monkeypatch.setattr(server, "RATE_LIMIT_ENABLED", True)
+    email = "rate.limit.subject@example.com"
+    statuses = []
+    for _ in range(6):
+        res = client.post("/api/auth/forgot-password", json={"email": email})
+        statuses.append(res.status_code)
+    assert statuses[:5] == [200] * 5, statuses
+    assert statuses[5] == 429, statuses
+    limited = client.post("/api/auth/forgot-password", json={"email": email})
+    assert limited.status_code == 429
+    assert int(limited.headers["retry-after"]) >= 1

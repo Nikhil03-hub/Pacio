@@ -78,6 +78,13 @@ DEFAULT_DEMO_PASSWORD = os.environ.get("DEFAULT_DEMO_PASSWORD")
 PUBLIC_BASE_URL = (os.environ.get("PUBLIC_BASE_URL") or "").strip().rstrip("/") or None
 SEED_DEMO_DATA = os.environ.get("SEED_DEMO_DATA", "true").strip().lower() in {"1", "true", "yes", "on"}
 SEED_DEMO_USERS = os.environ.get("SEED_DEMO_USERS", "false").strip().lower() in {"1", "true", "yes", "on"}
+# Vercel sets VERCEL=1 for every deployment (production and preview). A deployment with
+# no MONGO_URL would otherwise run on ephemeral storage and lose every account, session
+# and upload on each cold start, so that combination must fail loudly.
+APP_ENV = (os.environ.get("APP_ENV") or os.environ.get("ENVIRONMENT")
+           or ("production" if os.environ.get("VERCEL") else "development")).strip().lower()
+IS_PRODUCTION = APP_ENV in {"production", "prod"}
+RATE_LIMIT_ENABLED = os.environ.get("RATE_LIMIT_ENABLED", "true").strip().lower() in {"1", "true", "yes", "on"}
 # Uploaded documents are opened by institution staff; cap size and type so the
 # bucket cannot be used as general-purpose file hosting.
 MAX_UPLOAD_BYTES = int(os.environ.get("MAX_UPLOAD_BYTES", str(10 * 1024 * 1024)))
@@ -228,6 +235,36 @@ def _google_redirect_uri(request: Request) -> str:
 
 
 MIN_PASSWORD_LENGTH = 8
+
+
+async def _rate_limit(request: Request, scope: str, limit: int, window_seconds: int,
+                      identity: str = "") -> None:
+    """Fixed-window limiter backed by the shared datastore.
+
+    An in-process counter is useless on Vercel, where each invocation may land in a fresh
+    instance, so the counter lives in Mongo (or the in-memory store in a demo deployment).
+    Read-then-write leaves a small race; acceptable for abuse throttling and documented in
+    SECURITY_AND_PRIVACY.md.
+    """
+    if not RATE_LIMIT_ENABLED:
+        return
+    client_ip = (request.headers.get("x-forwarded-for") or "").split(",")[0].strip()
+    if not client_ip:
+        client_ip = request.client.host if request.client else "unknown"
+    window = max(1, window_seconds)
+    key = f"{scope}:{identity or client_ip}:{int(time.time()) // window}"
+    row = await db.rate_limits.find_one({"key": key}, {"_id": 0})
+    count = int((row or {}).get("count") or 0)
+    if count >= limit:
+        retry_after = window - (int(time.time()) % window)
+        raise HTTPException(429, "Too many requests. Try again shortly.",
+                            headers={"Retry-After": str(max(1, retry_after))})
+    await db.rate_limits.update_one(
+        {"key": key},
+        {"$set": {"key": key, "count": count + 1,
+                  "expires_at": (datetime.now(timezone.utc) + timedelta(seconds=window * 2)).isoformat()}},
+        upsert=True,
+    )
 
 
 def _hash_reset_token(raw_token: str) -> str:
@@ -1192,6 +1229,10 @@ async def _ensure_indexes():
     await db.revenue_share.create_index("institution_id")
     await db.students.create_index([("institution_id", 1), ("department", 1)])
     await db.saved_jobs.create_index([("user_id", 1), ("job_id", 1)], unique=True)
+    await db.rate_limits.create_index("key", unique=True)
+    await db.rate_limits.create_index("expires_at", expireAfterSeconds=0)
+    await db.certificates.create_index("cert_id", unique=True)
+    await db.certificates.create_index("institution_id")
 
 
 async def _purge_expired_sessions():
@@ -1214,15 +1255,47 @@ async def _ensure_database():
     await _purge_expired_sessions()
 
 
+async def _backfill_health_if_missing() -> None:
+    """Compute health scores for institutions that do not have one yet.
+
+    Idempotent and fully guarded, so a single bad institution can never block startup.
+    Runs on both the MongoDB and in-memory paths; previously only the latter did it, so a
+    real deployment showed blank health scores until someone pressed recompute.
+    """
+    try:
+        rows = await db.institutions.find({}, {"_id": 0, "institution_id": 1, "health_score": 1}).to_list(500)
+        for row in rows:
+            iid = row.get("institution_id")
+            if iid and row.get("health_score") is None:
+                try:
+                    await _compute_institution_health(iid)
+                except Exception as exc:  # noqa: BLE001
+                    log.warning("Health backfill skipped for %s: %s", iid, exc)
+    except Exception as exc:  # noqa: BLE001
+        log.warning("Health backfill skipped: %s", exc)
+
+
 async def _ensure_production_minimums():
-    seed_columns = ["institutions", "students", "recruiters", "applications", "mous", "revenue_share"]
-    missing_seed_columns = [col for col in seed_columns if await db[col].count_documents({}) == 0]
-    if SEED_DEMO_DATA and missing_seed_columns:
+    if SEED_DEMO_DATA:
+        # Seed every collection the demo product needs, not a hand-picked subset. The old
+        # six-column list left jobs, DSA, aptitude, placements and training empty on any
+        # real MongoDB deployment, which silently broke the jobs board and 30% of the
+        # readiness score while the in-memory demo looked complete.
         payload = seed_payload()
-        for col in missing_seed_columns:
-            items = payload.get(col, [])
-            if items:
+        for col, items in payload.items():
+            if items and await db[col].count_documents({}) == 0:
                 await db[col].insert_many(items)
+        if await db.dsa_questions.count_documents({}) == 0:
+            await db.dsa_questions.insert_many(build_dsa_question_bank())
+        await _ensure_aptitude_catalog()
+        # These two derived collections are seeded only by the in-memory branch unless
+        # mirrored here, which left the aptitude tracker and ATS history empty on a real
+        # deployment even though the underlying scores and reports existed.
+        if await db.aptitude_question_progress.count_documents({}) == 0 and await db.aptitude_scores.count_documents({}) > 0:
+            all_students = await db.students.find({}, {"_id": 0}).to_list(5000)
+            await _ensure_aptitude_progress_for_students(all_students)
+        if await db.resume_versions.count_documents({}) == 0 and await db.ats_reports.count_documents({}) > 0:
+            await _ensure_resume_versions_for_students()
 
     demo_users = _demo_account_specs()
     for d in demo_users:
@@ -1294,9 +1367,16 @@ async def _startup():
         # Without a secret, every session token is unsigned or shares a well-known key.
         # Refuse to boot rather than run an authentication layer that silently cannot work.
         raise RuntimeError("JWT_SECRET is not configured — refusing to start without a session-signing key")
+    if IS_PRODUCTION and not MONGO_URL:
+        # Ephemeral storage in production silently destroys tenant data on every cold
+        # start. Better to fail the deploy than to look healthy while losing records.
+        raise RuntimeError(
+            "MONGO_URL is not configured but APP_ENV=production. Refusing to start on "
+            "the in-memory fallback; set MONGO_URL to a persistent MongoDB instance.")
     await _ensure_database()
     if MONGO_URL:
         await _ensure_production_minimums()
+        await _backfill_health_if_missing()
         return
     await db.users.create_index("email", unique=True)
     await db.user_sessions.create_index("jwt_id", unique=True)
@@ -1422,19 +1502,7 @@ async def _startup():
             "created_at": datetime.now(timezone.utc).isoformat(),
         })
 
-    # Backfill college health scores so dashboards + the AI risk radar have data on first load.
-    # Idempotent (only computes when missing) and fully guarded so it can never break startup.
-    try:
-        _insts_for_health = await db.institutions.find({}, {"_id": 0, "institution_id": 1, "health_score": 1}).to_list(500)
-        for _inst in _insts_for_health:
-            _iid = _inst.get("institution_id")
-            if _iid and _inst.get("health_score") is None:
-                try:
-                    await _compute_institution_health(_iid)
-                except Exception as _e:  # noqa: BLE001
-                    log.warning("Health backfill skipped for %s: %s", _iid, _e)
-    except Exception as _e:  # noqa: BLE001
-        log.warning("Health backfill skipped: %s", _e)
+    await _backfill_health_if_missing()
 
 
 # ============== HEALTH ==============
@@ -1503,6 +1571,7 @@ async def issue_certificate(body: CertificateIssueBody, request: Request,
     printed QR code pointed at a domain this project does not own, so every scanned
     certificate led nowhere. Re-issuing the same id is idempotent.
     """
+    await _rate_limit(request, "cert-issue", 300, 3600, identity=user["user_id"])
     cert_id = (body.cert_id or "").strip().upper()
     if not cert_id or len(cert_id) > 64:
         raise HTTPException(422, "cert_id is required and must be 64 characters or fewer")
@@ -1585,6 +1654,8 @@ async def landing_stats():
 @app.post("/api/auth/login")
 async def login(body: LoginBody, request: Request, response: Response):
     email = body.email.lower()
+    await _rate_limit(request, "login-ip", 60, 60)
+    await _rate_limit(request, "login-email", 10, 60, identity=email)
     user = await db.users.find_one({"email": email})
     if not user or not user.get("password_hash") or not verify_password(body.password, user["password_hash"]):
         await _audit_log(
@@ -4894,7 +4965,7 @@ async def reseed_demo(admin=Depends(require_roles("super_admin"))):
 
 
 @app.get("/api/admin/cohorts/{program_code}/students")
-async def list_cohort_students(program_code: str, user=Depends(get_session_user)):
+async def list_cohort_students(program_code: str, user=Depends(require_roles("super_admin", "tpo", "institution_admin", "faculty"))):
     iid = user.get("institution_id")
     if not iid:
         if user["role"] == "super_admin":
@@ -5071,7 +5142,7 @@ async def _institution_overview_for_reports(iid: str) -> dict:
 
 
 @app.get("/api/reports/placement.pdf")
-async def report_placement_pdf(request: Request, user=Depends(get_session_user)):
+async def report_placement_pdf(request: Request, user=Depends(require_roles("super_admin", "tpo", "institution_admin", "faculty"))):
     iid = _scope_institution(user)
     inst = await db.institutions.find_one({"institution_id": iid}, {"_id": 0}) or {}
     overview = await _institution_overview_for_reports(iid)
@@ -5081,7 +5152,7 @@ async def report_placement_pdf(request: Request, user=Depends(get_session_user))
 
 
 @app.get("/api/reports/training.pdf")
-async def report_training_pdf(request: Request, user=Depends(get_session_user)):
+async def report_training_pdf(request: Request, user=Depends(require_roles("super_admin", "tpo", "institution_admin", "faculty"))):
     iid = _scope_institution(user)
     inst = await db.institutions.find_one({"institution_id": iid}, {"_id": 0}) or {}
     pipeline = [{"$match": {"institution_id": iid}},
@@ -5109,7 +5180,7 @@ async def report_training_pdf(request: Request, user=Depends(get_session_user)):
 
 
 @app.get("/api/reports/department.pdf")
-async def report_department_pdf(request: Request, user=Depends(get_session_user)):
+async def report_department_pdf(request: Request, user=Depends(require_roles("super_admin", "tpo", "institution_admin", "faculty"))):
     iid = _scope_institution(user)
     inst = await db.institutions.find_one({"institution_id": iid}, {"_id": 0}) or {}
     overview = await _institution_overview_for_reports(iid)
@@ -5120,7 +5191,7 @@ async def report_department_pdf(request: Request, user=Depends(get_session_user)
 
 
 @app.get("/api/reports/students.csv")
-async def report_students_csv(request: Request, department: Optional[str] = None, user=Depends(get_session_user)):
+async def report_students_csv(request: Request, department: Optional[str] = None, user=Depends(require_roles("super_admin", "tpo", "institution_admin", "faculty"))):
     iid = _scope_institution(user)
     if user["role"] == "super_admin":
         iid = DEFAULT_INSTITUTION_ID
@@ -5134,7 +5205,7 @@ async def report_students_csv(request: Request, department: Optional[str] = None
 
 
 @app.get("/api/reports/applications.csv")
-async def report_applications_csv(request: Request, user=Depends(get_session_user)):
+async def report_applications_csv(request: Request, user=Depends(require_roles("super_admin", "tpo", "institution_admin", "faculty"))):
     iid = _scope_institution(user)
     items = await db.applications.find({"institution_id": iid}, {"_id": 0}).to_list(2000)
     buf = applications_csv(items)
@@ -5143,7 +5214,7 @@ async def report_applications_csv(request: Request, user=Depends(get_session_use
 
 
 @app.get("/api/reports/placements.csv")
-async def report_placements_csv(request: Request, user=Depends(get_session_user)):
+async def report_placements_csv(request: Request, user=Depends(require_roles("super_admin", "tpo", "institution_admin", "faculty"))):
     iid = _scope_institution(user)
     records = await db.placement_records.find({"institution_id": iid}, {"_id": 0}).to_list(2000)
     buf = placements_csv(records)
@@ -5754,6 +5825,7 @@ async def invite_user(
     request: Request,
     user=Depends(require_roles("super_admin", "tpo", "institution_admin")),
 ):
+    await _rate_limit(request, "invite-user", 30, 3600, identity=user["user_id"])
     iid = body.institution_id if user["role"] == "super_admin" else user.get("institution_id")
     if not iid:
         raise HTTPException(400, "institution_id required")
@@ -6458,6 +6530,8 @@ async def google_oauth_callback(request: Request):
 @app.post("/api/auth/forgot-password")
 async def forgot_password(body: ForgotPasswordBody, request: Request):
     email = body.email.lower().strip()
+    await _rate_limit(request, "forgot-ip", 10, 900)
+    await _rate_limit(request, "forgot-email", 5, 900, identity=email)
     user = await db.users.find_one({"email": email})
     # Identical response whether or not the account exists: a 404 here confirms
     # which emails are registered and turns the form into an account enumerator.
@@ -6589,6 +6663,7 @@ async def auth_refresh(request: Request, response: Response):
 
 @app.post("/api/auth/register")
 async def auth_register(payload: RegisterBody, request: Request, response: Response):
+    await _rate_limit(request, "register-ip", 10, 3600)
     # Institution (TPO) self-onboarding only. Creates a pending institution and a
     # pending tpo user; role is fixed server-side, never trusted from client input.
     # The registrant then signs in with Google using this same email -
