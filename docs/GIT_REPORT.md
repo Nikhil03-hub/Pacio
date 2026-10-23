@@ -10,9 +10,9 @@ rebased, stashed or reset. Working trees are preserved.
 | Absolute path | `C:\Users\NIKHIL\OneDrive\ドキュメント\Claude Projects\Career Guidance\Pacio-Merged` |
 | Remote (fetch/push) | `https://github.com/Nikhil03-hub/pacio-intelligence.git` (public) |
 | Branch | `main`, tracking `origin/main` |
-| State | **5 commits ahead of origin, not pushed**, working tree clean |
+| State | **6 commits ahead of origin, not pushed**, working tree clean |
 | Baseline before this work | `6aa0f44` ("Auth redesign…") — clean tree except untracked `pacio-audit-findings.md` |
-| Cumulative diff vs origin | 55 files, +3,203 / -774 |
+| Cumulative diff vs origin | run `git diff --stat origin/main..HEAD` for the authoritative count; the table below lists every checkpoint |
 
 ### Local checkpoints, oldest first
 
@@ -23,6 +23,7 @@ rebased, stashed or reset. Working trees are preserved.
 | `c72e29f` | Remove published credentials; add proprietary `LICENSE`, `.env.example`, README and the full docs set; strip third-party attribution from DSA identifiers | docs, `LICENSE`, `README.md`, `backend/dsa_catalog.py`, `backend/seed_data.py` |
 | `6eb2a73` | Correct documented test counts to the verified run | docs |
 | `0736e5c` | Repair the MongoDB path (full seed, aptitude/resume backfills, health), add fail-closed production, shared-store rate limiting, central approval gate, staff-only exports; Tenant B matrix + real-Mongo integration tests; release readiness + provenance registry | backend, tests, docs |
+| `efa1359` | Fix the partial unique index on resume tokens (E11000 on nulls broke every ATS endpoint on Mongo); decouple derived backfills; record F-10..F-16; remove remaining password literals | backend, tests, docs |
 
 ### Files that exist but are deliberately NOT in git
 `backend/.env` (local secrets, git-ignored), `frontend/.env.local` (dev API URL,

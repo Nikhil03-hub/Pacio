@@ -17,9 +17,10 @@ MongoDB 8.2.1 on `127.0.0.1:27017`, no third-party API credentials.
 | Check | Command | Result |
 | --- | --- | --- |
 | Security/authorisation regressions | `pytest backend/tests/test_hardening.py -q` | **32 passed**, ~93 s |
+| Total | 32 + 20 + 3 + 73 | **128 passed** |
 | Multi-tenant role matrix (Tenant A vs synthetic Tenant B) | `pytest backend/tests/test_tenant_isolation.py -q` | **20 passed**, ~102 s |
 | Real-MongoDB integration | `PACIO_TEST_MONGO_URL=mongodb://127.0.0.1:27017 pytest backend/tests/test_mongo_integration.py -q` | **3 passed**, ~18 s |
-| Legacy feature suites | server on `:8060` with `RATE_LIMIT_ENABLED=false`, then `REACT_APP_BACKEND_URL=http://127.0.0.1:8060 pytest backend/tests/test_careeros_v2.py backend/tests/test_careeros_v21.py -q` | see run log; 73 tests |
+| Legacy feature suites | Mongo-backed server with `RATE_LIMIT_ENABLED=false`, then `DEFAULT_DEMO_PASSWORD=… REACT_APP_BACKEND_URL=… pytest backend/tests/test_careeros_v2.py backend/tests/test_careeros_v21.py -q` | **73 passed**, ~5 m 44 s |
 | Frontend production build | `cd frontend && REACT_APP_BACKEND_URL= CI=false npm run build` | compiled; 884 kB gzipped JS |
 | Certificate verification page | served build, `/verify/ST-CRT-TEST0001` | renders VALID with holder/program/institution; screenshot captured |
 | Stray `"/>` in the old certificate screenshot | source + build + commit check | **not present**: source clean, built HTML clean, fix shipped in commit `58d6dc5`. The screenshot was taken before that commit, from an earlier build. |
