@@ -100,6 +100,23 @@ Status vocabulary: **verified** (code path read and exercised), **partial**, **b
 | F-8 | Seven demo accounts, including a super_admin with a password published in the repo's own docs, were auto-seeded into any environment. | Admin bootstraps from env; demo accounts are opt-in (`SEED_DEMO_USERS`, default false). Tracked credential docs deleted. |
 | F-9 | Legacy Emergent `/api/auth/session` trusted a third-party endpoint's email and could mint a super_admin. | Disabled by default (410) behind `EMERGENT_AUTH_ENABLED`. |
 
+### Critical — found only by running against a real MongoDB (fixed)
+
+| ID | Finding | Fix |
+| --- | --- | --- |
+| F-10 | The MongoDB startup path seeded only six hand-picked collections. Jobs, the DSA catalog (474 questions / 340,931 progress rows), placements, training and announcements were empty on a real database, silently breaking the jobs board and 30% of the readiness score. The in-memory demo looked complete, which is why no earlier test caught it. | Both paths seed the full payload; aptitude progress, resume versions and health scores are backfilled on Mongo too. Verified by count on a fresh database. |
+| F-11 | Institution-wide PDF/CSV exports and cohort rosters accepted any authenticated user, so a student could download the whole roster. | Staff-only via `require_roles`. |
+| F-12 | Pending (unapproved) accounts could reach data routes that only depended on `get_session_user`. | Central approval gate: pending accounts get 403 on data routes, but can still read `/auth/me` and submit `/signup`. |
+| F-13 | No rate limiting on login, reset, registration or invitations; an in-process counter would not work across serverless instances. | Fixed-window limiter backed by the shared datastore (Mongo or the memory store), applied to the abuse-prone entry points. |
+
+### Reliability — found while verifying the production path (fixed)
+
+| ID | Finding | Fix |
+| --- | --- | --- |
+| F-14 | `seed_payload()` rebuilds ~340k demo rows **on every startup**, even when the database is already populated, so a cold start spent minutes generating data it then discarded. | Startup probes a few collections first; the payload is only generated when the deployment is genuinely empty. Cold start against a populated Mongo dropped to ~35 s. |
+| F-15 | An interrupted frontend build leaves `frontend/build/` in place but empty, and the unguarded `StaticFiles` mount then raised **at import time**, taking the entire API down. | Mount only when `build/static` exists; the SPA fallback already returns a clear 404 when `index.html` is missing. |
+| F-16 | The in-memory fallback is pathologically slow for analytics: `/api/placements/overview` computes readiness for up to 1,000 students and each per-student query scans ~340k rows in pure Python, blocking the event loop long enough to time out other requests. | Not "fixed" — the fallback is demo-only by design and production now refuses to start without Mongo. Documented as a hard operational constraint. |
+
 ### High — fixed
 
 - MOU upload/download open to students and faculty; no file-type, size or filename validation; `Content-Disposition` replayed client-controlled names/types.

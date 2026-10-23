@@ -1,5 +1,8 @@
 # Data Sources and Provenance
 
+Machine-readable register (source, retrieval date, verified/synthetic/unverified status,
+licence, limitations, dependent features): [DATA_PROVENANCE.csv](DATA_PROVENANCE.csv).
+
 All dates are access/verification dates. Nothing here was invented; where a source could
 not be established, the data is marked **unverified** rather than given a plausible origin.
 

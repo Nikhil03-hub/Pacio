@@ -40,7 +40,7 @@
     "/app/backend/tests/test_careeros_v21.py (created — 22 tests for v2.1 features)"
   ],
   "success_rate": {"backend": "100% (22/22 v2.1 + previous 29/32 v2 baseline)", "frontend": "~98% — every v2.1 page renders, every testid resolves, every download triggers, mobile drawer all 3 close paths work"},
-  "test_credentials": "Standard demo set; password 'careeros2026'. SendGrid sender unverified — email channel logs status='failed' as expected; telegram 'simulated'.",
+  "test_credentials": "Standard demo set; password '${DEFAULT_DEMO_PASSWORD}'. SendGrid sender unverified — email channel logs status='failed' as expected; telegram 'simulated'.",
   "seed_data_creation": "Backend tests created (and cleaned up) 1 'Dr. Test Invite' invited faculty user. Backend tests left behind 2 'Cross Test' invitee users in inst_kmit from the cross-institution test (no teardown for those — they appear in /tpo/team). Backend tests scheduled 1 interview for the demo student (status='cancelled' after test_cancel_interview ran), uploaded 1 test MOU PDF (~336 bytes × 4 = ~1.3KB) — current /tpo/mou now reflects this test PDF (test_mou.pdf, expires 2027-12-31). Drop careeros_campus DB to fully reset.",
   "retest_needed": false,
   "should_main_agent_self_test": true,

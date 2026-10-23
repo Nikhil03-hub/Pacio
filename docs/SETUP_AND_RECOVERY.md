@@ -56,11 +56,27 @@ cd Pacio-Merged
 
 | Suite | Command | Result on 2026-10-23 |
 | --- | --- | --- |
-| Hardening (new) | `pytest backend/tests/test_hardening.py` | **30 passed** in ~28 s; runs in-process with `TestClient`, no server needed |
-| Legacy v2 + v21 | `REACT_APP_BACKEND_URL=http://127.0.0.1:8000 pytest backend/tests/test_careeros_v2.py backend/tests/test_careeros_v21.py` | **73 passed** in ~6 min; needs a running server and reaches external services, which is why it is slow |
-| Frontend build | `cd frontend && CI=false npm run build` | **Compiled successfully**; 884 kB gzipped JS (BL-20) |
+| Hardening | `pytest backend/tests/test_hardening.py -q` | **32 passed** in ~93 s; in-process `TestClient`, no server, always uses the in-memory store |
+| Multi-tenant matrix | `pytest backend/tests/test_tenant_isolation.py -q` | **20 passed** in ~102 s; builds synthetic Tenant B with every role and proves cross-tenant boundaries |
+| Real MongoDB | `PACIO_TEST_MONGO_URL=mongodb://127.0.0.1:27017 pytest backend/tests/test_mongo_integration.py -q` | **3 passed** in ~18 s; creates a uniquely named database, verifies indexes and writes, drops it afterwards |
+| Legacy v2 + v21 | start the server with `MONGO_URL= RATE_LIMIT_ENABLED=false`, then `REACT_APP_BACKEND_URL=http://127.0.0.1:<port> pytest backend/tests/test_careeros_v2.py backend/tests/test_careeros_v21.py -q` | 73 tests; ~6 min; needs a running server and reaches external services. Disable the limiter because those tests log in repeatedly with the same accounts. |
+| Frontend build | `cd frontend && REACT_APP_BACKEND_URL= CI=false npm run build` | **Compiled successfully**; 884 kB gzipped JS (BL-20) |
 
-Total: **103 automated tests passing** on 2026-10-23.
+Total: **128 automated tests** (32 + 20 + 3 + 73) on 2026-10-23.
+
+The test modules force `MONGO_URL=""` before importing the app, so they can never write
+synthetic tenants into a developer's real database. Real-database behaviour is covered by
+the separate, explicitly opt-in integration suite.
+
+### Real-MongoDB verification performed (local MongoDB 8.2.1, database dropped afterwards)
+
+Full seed on a fresh database: 57 institutions, 5,450 students, 1,565 jobs, 979
+applications, 474 DSA questions, 340,931 DSA progress rows, 282 aptitude questions, 4,920
+aptitude scores, 858 placement records, 56 MOUs, 165 revenue records, health scores on all
+57 institutions. Unique/TTL indexes confirmed. A session and an issued certificate survived
+a real process restart; logout then returned 401; the limiter returned 429 with
+`Retry-After`; and `APP_ENV=production` with no `MONGO_URL` exited with
+`RuntimeError: MONGO_URL is not configured but APP_ENV=production…`.
 
 There is no CI yet (BL-18) and no browser test (BL-19).
 

@@ -8,7 +8,8 @@ import requests
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://career-os-nexus.preview.emergentagent.com").rstrip("/")
 API = f"{BASE_URL}/api"
-PWD = "careeros2026"
+PWD = os.environ.get("DEFAULT_DEMO_PASSWORD", "")
+pytestmark = pytest.mark.skipif(not PWD, reason="set DEFAULT_DEMO_PASSWORD to the local demo password")
 
 DEMO = {
     "admin": "admin@careeros.app",

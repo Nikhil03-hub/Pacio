@@ -48,7 +48,6 @@ REM --- 3) Launch the server (it also serves the built UI) ------------------
 echo [3/3] Starting CareerOS...
 echo.
 echo    Open your browser at:  http://localhost:8000
-echo    Log in with:  tpo@kmit.in  /  careeros2026   (see RUN_ON_WINDOWS.md for all roles)
 echo    Press Ctrl+C in this window to stop the server.
 echo.
 python -m uvicorn server:app --host 0.0.0.0 --port 8000

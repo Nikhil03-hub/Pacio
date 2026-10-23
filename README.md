@@ -30,13 +30,17 @@ Demo account handling: [docs/DEMO_ACCESS.md](docs/DEMO_ACCESS.md).
 ## Verify it
 
 ```bash
-.venv/Scripts/python.exe -m pytest backend/tests/test_hardening.py -q        # 24 tests, no server needed
-REACT_APP_BACKEND_URL=http://127.0.0.1:8000 .venv/Scripts/python.exe -m pytest backend/tests -q
-cd frontend && CI=false npm run build
+.venv/Scripts/python.exe -m pytest backend/tests/test_hardening.py -q            # 32
+.venv/Scripts/python.exe -m pytest backend/tests/test_tenant_isolation.py -q     # 20
+PACIO_TEST_MONGO_URL=mongodb://127.0.0.1:27017   .venv/Scripts/python.exe -m pytest backend/tests/test_mongo_integration.py -q  # 3
+# legacy suites need a running server with RATE_LIMIT_ENABLED=false (see docs)
+cd frontend && REACT_APP_BACKEND_URL= CI=false npm run build
 ```
 
-Last full run (2026-10-23): **30 hardening + 73 legacy tests passed** (103 total), frontend
-compiled clean.
+Last full run (2026-10-23): **128 automated tests passed** (32 hardening + 20 tenant +
+3 real-MongoDB + 73 legacy), frontend compiled clean. Details and exact commands:
+[docs/SETUP_AND_RECOVERY.md](docs/SETUP_AND_RECOVERY.md) and
+[docs/RELEASE_READINESS.md](docs/RELEASE_READINESS.md).
 
 ## What is real and what is sample
 

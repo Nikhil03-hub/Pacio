@@ -43,7 +43,7 @@
     "/app/backend/tests/test_careeros_backend.py (deleted — v1 obsolete)"
   ],
   "success_rate": {"backend": "91% (29/32 — 3 fails all on DSA_TOTAL mismatch)", "frontend": "~95% — all role logins, role-isolation, student DSA tracker (19/19 +/- buttons clickable), platform admin, TPO sidebar nav all working"},
-  "test_credentials": "All 6 demo accounts: admin@careeros.app, institution@kmit.in, tpo@kmit.in, faculty@kmit.in, student@kmit.in, recruiter@amazon.com + tpo@vasavi.ac.in (pending). Password 'careeros2026' for all.",
+  "test_credentials": "All 6 demo accounts: admin@careeros.app, institution@kmit.in, tpo@kmit.in, faculty@kmit.in, student@kmit.in, recruiter@amazon.com + tpo@vasavi.ac.in (pending). Password '${DEFAULT_DEMO_PASSWORD}' for all.",
   "seed_data_creation": "Backend test created 1 TEST_ announcement and approved the Vasavi pending user (this persists — Vasavi now shows approved=true in DB; landing stat shifts 6→7 institutions). If demo polish requires institutions=6, reseed or manually flip Vasavi back to approved=false.",
   "retest_needed": false,
   "should_main_agent_self_test": true,

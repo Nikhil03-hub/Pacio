@@ -135,7 +135,10 @@ APTITUDE_PREP_SECTIONS = [
     ]},
     {"code": "DI", "name": "Data Interpretation", "topics": ["Tables", "Pie Charts", "Bar Graphs", "Line Charts", "Caselets"]},
 ]
-if FRONTEND_BUILD.exists():
+# Guard the directory that is actually mounted. `build/` can exist while `build/static`
+# is missing (an interrupted frontend build empties the folder first), and Starlette raises
+# at import time in that case - which would take the entire API down with it.
+if (FRONTEND_BUILD / "static").is_dir():
     app.mount("/static", StaticFiles(directory=FRONTEND_BUILD / "static"), name="static")
 
 ALLOWED_ORIGINS = [o.strip() for o in os.environ.get("ALLOWED_ORIGINS", "https://pacio-two.vercel.app").split(",") if o.strip()]
@@ -1220,7 +1223,17 @@ async def _ensure_indexes():
     await db.aptitude_test_attempts.create_index("student_id")
     await db.mock_interview_sessions.create_index("student_id")
     await db.resume_versions.create_index("student_id")
-    await db.resume_versions.create_index("download_token", unique=True)
+    # Partial, not plain unique: ATS-imported versions have no download token, and Mongo
+    # treats every missing value as null, so a plain unique index rejects the second row
+    # (E11000) and breaks the ATS endpoints. Uniqueness is only meaningful for real tokens.
+    try:
+        await db.resume_versions.drop_index("download_token_1")
+    except Exception:  # noqa: BLE001 - absent on a fresh database
+        pass
+    await db.resume_versions.create_index(
+        "download_token", unique=True,
+        partialFilterExpression={"download_token": {"$type": "string"}},
+    )
     await db.recruiter_shortlists.create_index("recruiter_id")
     await db.recruiter_saved_filters.create_index("recruiter_id")
     await db.password_reset_tokens.create_index("token_hash", unique=True)
@@ -1281,16 +1294,30 @@ async def _ensure_production_minimums():
         # six-column list left jobs, DSA, aptitude, placements and training empty on any
         # real MongoDB deployment, which silently broke the jobs board and 30% of the
         # readiness score while the in-memory demo looked complete.
-        payload = seed_payload()
+        #
+        # seed_payload() builds ~340k rows in memory. It must only run on a genuinely
+        # empty deployment: doing it on every cold start added minutes of startup latency
+        # before the first request could be served.
+        probe = ["institutions", "students", "jobs", "applications",
+                 "dsa_questions", "dsa_question_progress", "placement_records"]
+        needs_seed = False
+        for col in probe:
+            if await db[col].count_documents({}) == 0:
+                needs_seed = True
+                break
+        payload = seed_payload() if needs_seed else {}
         for col, items in payload.items():
             if items and await db[col].count_documents({}) == 0:
                 await db[col].insert_many(items)
-        if await db.dsa_questions.count_documents({}) == 0:
+        if needs_seed and await db.dsa_questions.count_documents({}) == 0:
             await db.dsa_questions.insert_many(build_dsa_question_bank())
         await _ensure_aptitude_catalog()
         # These two derived collections are seeded only by the in-memory branch unless
         # mirrored here, which left the aptitude tracker and ATS history empty on a real
         # deployment even though the underlying scores and reports existed.
+        # Derived collections are repaired whenever their source exists and the target is
+        # empty - not only when the whole demo payload was just seeded. These are cheap
+        # count checks on a populated database.
         if await db.aptitude_question_progress.count_documents({}) == 0 and await db.aptitude_scores.count_documents({}) > 0:
             all_students = await db.students.find({}, {"_id": 0}).to_list(5000)
             await _ensure_aptitude_progress_for_students(all_students)

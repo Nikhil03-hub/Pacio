@@ -7,9 +7,9 @@ Current state, what changed, what is blocked, and how to verify it yourself.
 | | |
 | --- | --- |
 | Repository | `Pacio-Merged`, remote `Nikhil03-hub/pacio-intelligence` (**public**) |
-| Branch | `main`; two local commits added in this work, **not pushed** |
+| Branch | `main`; five local commits added in this work, **not pushed** |
 | Baseline before this work | HEAD `6aa0f44`, clean tree except one untracked audit file |
-| Tests | 103 passing on 2026-10-23: 30 new hardening tests + 73 legacy tests |
+| Tests | 128 passing on 2026-10-23: 32 hardening + 20 tenant-boundary + 3 real-MongoDB + 73 legacy |
 | Frontend build | Compiles clean; 884 kB gzipped JS |
 | Live site | `https://pacio-two.vercel.app` reachable; **not modified** by this work |
 | Sub-product | `../skill-tank-partner-platform` - Next.js/Supabase, has **uncommitted** work |
@@ -39,7 +39,17 @@ and an email path so a fresh clone is usable.
 
 **Then:** credential documents removed from tracking and sanitised, `.env.example`, a
 proprietary `LICENSE`, third-party branding stripped from the DSA catalog identifiers, and
-this documentation set.
+the documentation set.
+
+**Then (real-database pass):** running against a fresh local MongoDB exposed that the Mongo
+startup path seeded only six collections, leaving jobs, the entire DSA catalog, placements,
+training and announcements empty on any real deployment — while the in-memory demo looked
+complete. Fixed, along with missing aptitude/resume backfills and health scores. Added
+fail-closed production startup, shared-store rate limiting, a central approval gate, and
+staff-only exports. New suites: a Tenant-A-vs-Tenant-B matrix (20), real-MongoDB integration
+(3), and fail-closed/rate-limit regressions. Evidence:
+`docs/RELEASE_READINESS.md`, provenance: `docs/DATA_PROVENANCE.csv`, git:
+`docs/GIT_REPORT.md`.
 
 ## Where to look
 
@@ -78,7 +88,8 @@ cd frontend && npm run build
    or externally visible.
 2. **Vercel environment variables could not be inspected from here.** Confirm `JWT_SECRET`,
    `MONGO_URL`, `PUBLIC_BASE_URL`, `ALLOWED_ORIGINS` and the Google OAuth pair. A missing
-   `MONGO_URL` means production data is erased on every cold start.
+   `MONGO_URL` now makes a production build **refuse to start** (it used to lose data on
+   every cold start), so set it before deploying these commits.
 3. **Production demo accounts.** New deployments no longer create them, but rows already in
    Atlas remain. Mutating a live database was not attempted.
 4. **Brand.** `careeros.com` is an operating product in the same category and

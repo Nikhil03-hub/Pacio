@@ -54,6 +54,11 @@ database was dropped after use.
 2. Aptitude progress and resume versions were backfilled only on the in-memory path, so ATS
    history and the aptitude tracker were empty on Mongo.
 3. Health scores were never computed on the Mongo path.
+4. Cold start rebuilt ~340k seed rows in memory on every boot even when the database was
+   already populated (minutes of latency); it now probes first and only seeds an empty
+   deployment. Populated-database startup measured at ~35 s.
+5. An interrupted frontend build left `frontend/build/` empty, and the unconditional
+   `StaticFiles` mount crashed the whole API at import. Mounting is now guarded.
 
 ## 3. Depends on external services — NOT verified
 
