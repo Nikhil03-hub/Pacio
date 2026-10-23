@@ -39,6 +39,9 @@ readiness · `P3` evidence-backed product improvement · `P4` polish.
 | BL-28 | P3 | KMIT year-by-year placement tuples cannot be traced to a published source; only aggregate figures are published | `backend/seed_data.py` | **OPEN** | Document provenance in `DATA_SOURCES.md` (done) and mark the granular rows as modelled, or replace with published aggregates. |
 | BL-29 | P4 | `num-mono`/`tnum` overlap; `index.css` re-declares `font-display/serif/mono` that Tailwind already emits | `frontend/src/index.css` | **PARTIAL** | `num-mono` now defined; dedupe the font utilities and pick one numeric class convention. |
 | BL-30 | P4 | Currency and date formatting are hand-rolled in 26 places with mixed `en-US`/`en-IN` locales | `frontend/src/lib/utils.js` | **OPEN** | Route all formatting through `lib/utils.js` with a single `en-IN` locale policy. |
+| BL-32 | P1 | DSA problems have no examples, constraints, signatures or tests, so none can be auto-graded | `backend/dsa_catalog.py` | **OPEN** | Add `statement`, `constraints`, `examples`, `hidden_tests`, `expected_complexity` per problem; validate with reference solutions plus negative mutants. Never run learner code in CI; use an isolated sandbox. |
+| BL-33 | P2 | DSA coverage gaps: sorting, tries, strings-as-topic, queues/deques and data-structure design are absent; several topics have no Easy on-ramp | `backend/dsa_catalog.py` | **OPEN** | Add SORTING (8), TRIES (5), STRINGS (6), DESIGN (4); rebalance to ≥30% Easy, at least one Easy per topic. |
+| BL-34 | P2 | No evidence ledger for any "asked at company X" label | DSA UI / catalogue | **OPEN** | Store company, role, level, source URL, source date, report count, collected/expiry date, reviewer. Only display a company claim with ≥3 independent dated reports within 24 months; never show frequencies without a denominator. |
 
 ## Suggested order of work
 

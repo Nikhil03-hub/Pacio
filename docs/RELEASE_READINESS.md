@@ -17,10 +17,10 @@ MongoDB 8.2.1 on `127.0.0.1:27017`, no third-party API credentials.
 | Check | Command | Result |
 | --- | --- | --- |
 | Security/authorisation regressions | `pytest backend/tests/test_hardening.py -q` | **32 passed**, ~93 s |
-| Total | 32 + 20 + 3 + 73 | **128 passed** |
+| Total | 32 + 20 + 3 + 73 | **128 passed, all four suites exit 0** |
 | Multi-tenant role matrix (Tenant A vs synthetic Tenant B) | `pytest backend/tests/test_tenant_isolation.py -q` | **20 passed**, ~102 s |
 | Real-MongoDB integration | `PACIO_TEST_MONGO_URL=mongodb://127.0.0.1:27017 pytest backend/tests/test_mongo_integration.py -q` | **3 passed**, ~18 s |
-| Legacy feature suites | Mongo-backed server with `RATE_LIMIT_ENABLED=false`, then `DEFAULT_DEMO_PASSWORD=… REACT_APP_BACKEND_URL=… pytest backend/tests/test_careeros_v2.py backend/tests/test_careeros_v21.py -q` | **72 passed / 1 failed** on the run after the curriculum change; the failure was a stale title assertion (`Kadane's Algorithm`, `Rotate Matrix` are no longer in the catalogue), corrected, and that test passes in isolation. Earlier full run on the previous catalogue: 73/73. |
+| Legacy feature suites | `bash scripts/release_gate.sh` against a Mongo-backed server with `RATE_LIMIT_ENABLED=false` | **73 passed** (10 m 09 s), exit 0 |
 | Frontend production build | `cd frontend && REACT_APP_BACKEND_URL= CI=false npm run build` | compiled; 884 kB gzipped JS |
 | Certificate verification page | served build, `/verify/ST-CRT-RC2026` | renders VALID with holder/program/institution; screenshot captured |
 | Login page (served build) | `http://127.0.0.1:8073/login` | renders; no stray markup in the top-left corner; screenshot captured |
@@ -76,6 +76,15 @@ database was dropped after use.
 5. An interrupted frontend build left `frontend/build/` empty, and the unconditional
    `StaticFiles` mount crashed the whole API at import. Mounting is now guarded.
 
+## 2b. Data discovery (research complete, no import)
+
+48 sources were investigated across public repositories, official portals and job APIs.
+Findings and licensing verdicts: `docs/data/DATA_SOURCE_DISCOVERY_REPORT.md` and
+`docs/data/DATA_SOURCE_REGISTER.csv`. Headline: no openly licensed multi-college,
+company-level placement dataset exists; KMIT publishes per-company figures only through
+2023-24; AISHE/AICTE data is readable but redistribution needs written consent; OGD is the
+cleanest licensed route; Adzuna is the best India job feed but requires a paid licence.
+
 ## 3. Depends on external services — NOT verified
 
 | Integration | Status | How to prove it |
@@ -107,7 +116,7 @@ determined from this machine. Treat these as owner checks:
 | Blocker | Status |
 | --- | --- |
 | Exposed credentials in public git history | **OPEN** — rotate at providers; decide history rewrite vs private repo |
-| DSA curriculum rights | **RESOLVED (2026-10-23)** — the third-party sheet was replaced with an original 12-topic / 108-problem pattern curriculum written for this product; coverage sources are cited, no third-party content is reproduced |
+| DSA curriculum rights + validation | **PARTIAL (2026-10-23)** — the third-party sheet was replaced with an original 12-topic / 108-problem set (prompts authored here, coverage sources cited). Not yet cleared: 0/108 problems have executable specs/tests, and the compilation still needs legal review before sale |
 | Brand collision (`careeros.com`) | **OPEN** — owner naming decision |
 | Seeded data names real colleges with invented partnerships/payouts | **OPEN** — fictionalise or obtain permission |
 | No customer, pilot, LOI, tender or willingness-to-pay evidence | **OPEN** — the only sourced price in the category is one competitor's list price (₹25k–55k/month) |

@@ -59,7 +59,7 @@ cd Pacio-Merged
 | Hardening | `pytest backend/tests/test_hardening.py -q` | **32 passed** in ~93 s; in-process `TestClient`, no server, always uses the in-memory store |
 | Multi-tenant matrix | `pytest backend/tests/test_tenant_isolation.py -q` | **20 passed** in ~102 s; builds synthetic Tenant B with every role and proves cross-tenant boundaries |
 | Real MongoDB | `PACIO_TEST_MONGO_URL=mongodb://127.0.0.1:27017 pytest backend/tests/test_mongo_integration.py -q` | **3 passed** in ~18 s; creates a uniquely named database, verifies indexes and writes, drops it afterwards |
-| Legacy v2 + v21 | start the server with `RATE_LIMIT_ENABLED=false` (Mongo or memory), then `DEFAULT_DEMO_PASSWORD=… REACT_APP_BACKEND_URL=http://127.0.0.1:<port> pytest backend/tests/test_careeros_v2.py backend/tests/test_careeros_v21.py -q` | 73 tests; 5-16 min depending on load; needs a running server. Disable the limiter because the tests log in repeatedly with the same accounts. On a memory-backed server the analytics endpoints are pathologically slow (see BL-31). |
+| Legacy v2 + v21 | `bash scripts/release_gate.sh` (starts all four suites; needs the API running with `RATE_LIMIT_ENABLED=false`) | **73 passed**, 10 m 09 s, exit 0. On a memory-backed server the analytics endpoints are pathologically slow (see BL-31), so run it against MongoDB. |
 | Frontend build | `cd frontend && REACT_APP_BACKEND_URL= CI=false npm run build` | **Compiled successfully**; 884 kB gzipped JS (BL-20) |
 
 Total: **128 automated tests** (32 + 20 + 3 + 73) on 2026-10-23.
