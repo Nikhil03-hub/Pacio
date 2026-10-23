@@ -1,5 +1,4 @@
 import React from 'react';
-import { ArrowRight } from 'lucide-react';
 import { customerStats, featuredTestimonials } from '../../mock';
 
 const tileColors = ['#ffd7f0', '#b7efb2', '#ffef99', '#e2ddfd', '#ffd7f0', '#b7efb2'];
@@ -9,26 +8,30 @@ export default function CustomerStories() {
     <section className="bg-white py-24">
       <div className="max-w-[1200px] mx-auto px-5">
         <h2 className="font-display font-medium text-[#111111] tracking-display leading-[1.05] text-[36px] md:text-[52px] text-center">
-          Real results from real customers
+          What the demonstration dataset contains
         </h2>
+        <p className="mt-3 text-[15px] text-[#6d6c6b] text-center max-w-2xl mx-auto">
+          Every figure below is generated sample data shipped with this build so the product can be
+          evaluated end to end. None of it is customer or placement-outcome data.
+        </p>
 
         <div className="mt-12 grid grid-cols-2 md:grid-cols-3 gap-4">
           {customerStats.map((c, i) => (
-            <a key={c.company} href="/login" className="relative group rounded-2xl p-6 md:p-7 overflow-hidden ring-subtle hover:shadow-card-xl transition-shadow" style={{ background: tileColors[i] }}>
+            <div key={c.company} className="relative rounded-2xl p-6 md:p-7 overflow-hidden ring-subtle" style={{ background: tileColors[i] }}>
               <div className="text-[44px] md:text-[52px] font-medium text-[#111111] tracking-hero leading-none">{c.metric}</div>
               <div className="mt-1 text-[14px] text-[#111111]/70">{c.label}</div>
               <div className="mt-8 flex items-end justify-between">
-                <div className="text-[16px] font-bold tracking-tight2 text-[#111111]">{c.company}</div>
-                <div className="inline-flex items-center gap-1 text-[13px] text-[#111111] opacity-80 group-hover:opacity-100">
-                  Read story <ArrowRight className="w-3.5 h-3.5" />
-                </div>
+                <div className="text-[13px] font-medium tracking-tight2 text-[#111111]/70">{c.company}</div>
               </div>
-            </a>
+            </div>
           ))}
         </div>
 
-        {/* 3 featured testimonials */}
-        <div className="mt-16 grid md:grid-cols-3 gap-5">
+        {/* Role walkthroughs written by the product team, deliberately not presented as customer quotes. */}
+        <p className="mt-16 mb-5 text-[12px] uppercase tracking-eyebrow text-[#6d6c6b]">
+          Illustrative role walkthroughs &mdash; not customer testimonials
+        </p>
+        <div className="mt-0 grid md:grid-cols-3 gap-5">
           {featuredTestimonials.map((t) => (
             <div key={t.name} className="rounded-2xl ring-subtle p-6 bg-white">
               <p className="text-[17px] md:text-[19px] font-medium text-[#111111] tracking-tight2 leading-snug">

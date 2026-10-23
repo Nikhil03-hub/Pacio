@@ -35,8 +35,30 @@ export default function Announcements() {
     count: items.filter((item) => item.kind === kind).length,
   })), [items]);
 
-  const monthDays = Array.from({ length: 28 }, (_, i) => i + 1);
-  const activeDays = new Set(items.map((item) => Number(item.created_at?.slice(8, 10))).filter(Boolean));
+  const [monthOffset, setMonthOffset] = useState(0);
+  const view = useMemo(() => {
+    const cursor = new Date();
+    cursor.setDate(1);
+    cursor.setMonth(cursor.getMonth() + monthOffset);
+    const year = cursor.getFullYear();
+    const month = cursor.getMonth();
+    return {
+      year,
+      month,
+      label: cursor.toLocaleDateString("en-IN", { month: "long", year: "numeric" }),
+      days: new Date(year, month + 1, 0).getDate(),
+      isCurrentMonth: monthOffset === 0,
+    };
+  }, [monthOffset]);
+
+  const monthKey = `${view.year}-${String(view.month + 1).padStart(2, "0")}`;
+  const monthDays = useMemo(() => Array.from({ length: view.days }, (_, i) => i + 1), [view.days]);
+  const activeDays = useMemo(() => new Set(
+    items
+      .filter((item) => (item.created_at || "").slice(0, 7) === monthKey)
+      .map((item) => Number(item.created_at?.slice(8, 10)))
+      .filter(Boolean),
+  ), [items, monthKey]);
 
   return (
     <div className="space-y-6">
@@ -58,10 +80,22 @@ export default function Announcements() {
         <div className="col-span-12 lg:col-span-3 space-y-3">
           <div className="editorial p-5">
             <div className="flex items-center justify-between">
-              <div className="font-display text-xl tracking-tight">Broadcast Calendar</div>
+              <div>
+                <div className="font-display text-xl tracking-tight">Broadcast Calendar</div>
+                <div className="font-mono text-[10px] tracking-[0.24em] text-ink-400 uppercase mt-0.5">{view.label}</div>
+              </div>
               <div className="flex gap-1">
-                <button className="w-7 h-7 border border-line grid place-items-center text-ink-400"><ChevronLeft size={14} /></button>
-                <button className="w-7 h-7 border border-line grid place-items-center text-ink-400"><ChevronRight size={14} /></button>
+                <button
+                  onClick={() => setMonthOffset((m) => m - 1)}
+                  aria-label="Previous month"
+                  className="w-7 h-7 border border-line grid place-items-center text-ink-400 hover:border-ink-900 hover:text-ink-900 transition-colors"
+                ><ChevronLeft size={14} /></button>
+                <button
+                  onClick={() => setMonthOffset((m) => Math.min(0, m + 1))}
+                  disabled={view.isCurrentMonth}
+                  aria-label="Next month"
+                  className="w-7 h-7 border border-line grid place-items-center text-ink-400 hover:border-ink-900 hover:text-ink-900 transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                ><ChevronRight size={14} /></button>
               </div>
             </div>
             <div className="grid grid-cols-7 gap-1 mt-5">

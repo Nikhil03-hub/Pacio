@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { useAuth } from "../App";
@@ -95,14 +96,14 @@ export default function PlatformControl() {
               if (window.confirm("Are you sure you want to reseed missing demo data? This will safely insert any missing colleges, students, and recruiters without deleting any existing records.")) {
                 try {
                   await api.post("/admin/reseed-demo");
-                  alert("Demo database reseeded successfully.");
-                  window.location.reload();
+                  toast.success("Demo data reseeded. Reloading…");
+                  setTimeout(() => window.location.reload(), 700);
                 } catch (e) {
-                  alert("Error reseeding database: " + (e.response?.data?.detail || e.message));
+                  toast.error("Reseed failed: " + (e.response?.data?.detail || e.message));
                 }
               }
             }}
-            className="btn bg-rose-750 border-rose-750 hover:bg-rose-800 hover:border-rose-800 text-bone-100"
+            className="btn bg-rust border-rust hover:bg-accent hover:border-accent text-bone-100"
           >
             Reseed Missing Demo Data
           </button>

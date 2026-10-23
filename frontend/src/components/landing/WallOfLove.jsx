@@ -27,8 +27,11 @@ export default function WallOfLove() {
     <section className="bg-white py-24 overflow-hidden">
       <div className="max-w-[1200px] mx-auto px-5">
         <h2 className="font-display font-medium text-[#111111] tracking-display leading-[1.05] text-[32px] md:text-[44px] text-center">
-          Some love from CareerOS users
+          How each role uses the platform
         </h2>
+        <p className="mt-3 text-[14px] text-[#6d6c6b] text-center max-w-2xl mx-auto">
+          Written from the product team as role walkthroughs &mdash; these are illustrative, not customer testimonials.
+        </p>
       </div>
       <div className="mt-12 space-y-4">
         <div className="overflow-hidden no-scrollbar">

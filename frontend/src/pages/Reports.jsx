@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Download, FileJson, FileSpreadsheet, FileText, ShieldCheck } from "lucide-react";
 import { api, apiUrl, getAuthToken } from "../lib/api";
 
@@ -56,9 +57,9 @@ export default function Reports() {
             onClick={async () => {
               try {
                 await api.post("/digest/send", {});
-                alert("Periodic Digest report compiled and dispatched successfully.");
+                toast.success("Digest compiled and queued for delivery.");
               } catch (e) {
-                alert("Failed to send periodic digest: " + (e.response?.data?.detail || e.message));
+                toast.error("Digest failed: " + (e.response?.data?.detail || e.message));
               }
             }}
             className="mt-6 btn bg-bone-100 text-ink-900 border-bone-100 hover:bg-accent hover:border-accent hover:text-white"

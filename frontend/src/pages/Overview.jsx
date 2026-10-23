@@ -7,6 +7,8 @@ import { AlertTriangle, ArrowUpRight, CheckCircle2 } from "lucide-react";
 import VoiceSummary from "../components/VoiceSummary";
 import HealthBreakdown from "../components/HealthBreakdown";
 import HighRiskStudents from "../components/HighRiskStudents";
+import AnomalyDetective from "../components/AnomalyDetective";
+import WhatIfSimulator from "../components/WhatIfSimulator";
 import AICopilot from "../components/AICopilot";
 
 const num = (value, decimals = 0) => {
@@ -229,6 +231,20 @@ export default function Overview() {
           </div>
           <div className="col-span-12 md:col-span-5">
             <HighRiskStudents rosterPath={rosterPath} />
+          </div>
+        </div>
+      )}
+
+      {/* Anomaly detection and intervention modelling were built during the hackathon
+          but never mounted, so the product claimed two intelligence features it did not
+          show. They render from the same live placement payload as the rest of this page. */}
+      {institutionId && (
+        <div className="grid grid-cols-12 gap-3" data-testid="signal-forecast-row">
+          <div className="col-span-12 md:col-span-7">
+            <AnomalyDetective />
+          </div>
+          <div className="col-span-12 md:col-span-5">
+            <WhatIfSimulator />
           </div>
         </div>
       )}

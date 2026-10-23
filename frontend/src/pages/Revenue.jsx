@@ -35,7 +35,7 @@ export default function Revenue() {
     setSubmitting(true);
     try {
       await api.post("/revenue/share", {
-        institution_id: user?.institution_id || "inst_kmit",
+        institution_id: user?.institution_id,
         amount_inr: Number(form.amount_inr),
         period: form.period,
         type: form.type

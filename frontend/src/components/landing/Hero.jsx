@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowRight, Star, Play, Mail } from 'lucide-react';
+import { ArrowRight, Play, Mail } from 'lucide-react';
 import { heroQuote } from '../../mock';
 
 const RocketIllustration = () => (
@@ -190,9 +190,7 @@ export default function Hero() {
             <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-3 text-[12px]">
               <div className="flex items-center gap-2">
                 <GoogleG />
-                <div className="flex items-center gap-0.5">
-                  {[...Array(5)].map((_, i) => <Star key={i} className="w-3.5 h-3.5 fill-[#111111] text-[#111111]" />)}
-                </div>
+                <div className="text-[10px] uppercase tracking-eyebrow text-[#6d6c6b] mb-3">Illustrative &middot; not a customer review</div>
                 <span className="text-[#6d6c6b]">Live readiness scoring</span>
               </div>
               <div className="w-px h-4 bg-[#1111111a]" />
@@ -217,9 +215,7 @@ export default function Hero() {
 
           <div className="rounded-2xl bg-white ring-subtle p-6 flex flex-col justify-between shadow-card-xl">
             <div>
-              <div className="flex items-center gap-0.5 mb-4">
-                {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-[#e8400d] text-[#e8400d]" />)}
-              </div>
+              <div className="text-[10px] uppercase tracking-eyebrow text-inherit opacity-70">Illustrative &middot; not a customer review</div>
               <p className="text-[18px] md:text-[22px] leading-[1.25] font-medium text-[#111111] tracking-tight2">
                 "{heroQuote.quote}"
               </p>

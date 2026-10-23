@@ -165,13 +165,15 @@ export const personas = [
   },
 ];
 
+// Numbers describe the bundled demonstration dataset only. They are deliberately not
+// phrased as customer outcomes, because no customer data exists yet.
 export const customerStats = [
-  { metric: "702", label: "offers tracked", company: "KMIT" },
-  { metric: "148", label: "recruiters connected", company: "CareerOS" },
-  { metric: "455", label: "DSA problems", company: "Striver A2Z" },
-  { metric: "80L", label: "top package", company: "Amazon" },
-  { metric: "470", label: "student profiles", company: "Seeded data" },
-  { metric: "13", label: "intelligence modules", company: "V3" },
+  { metric: "702", label: "offers in demo data", company: "Sample dataset" },
+  { metric: "148", label: "recruiter names", company: "Sample dataset" },
+  { metric: "474", label: "DSA problems tracked", company: "Curriculum catalog" },
+  { metric: "80L", label: "highest demo package", company: "Sample dataset" },
+  { metric: "5,450", label: "student profiles", company: "Sample dataset" },
+  { metric: "13", label: "intelligence modules", company: "This build" },
 ];
 
 export const featuredTestimonials = [

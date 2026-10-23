@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, Sparkles, Star } from 'lucide-react';
+import { ArrowRight, Sparkles } from 'lucide-react';
 import { signals, duoQuote } from '../../mock';
 
 const row1 = signals.slice(0, 13);
@@ -85,14 +85,14 @@ export default function DuoSection() {
 
         {/* Deel quote */}
         <div className="mt-20 max-w-3xl mx-auto bg-white/[0.04] ring-1 ring-white/10 backdrop-blur-sm rounded-2xl p-7 md:p-9">
-          <div className="flex items-center gap-0.5 mb-5">
-            {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-[#e8400d] text-[#e8400d]" />)}
+          <div className="text-[11px] uppercase tracking-eyebrow text-white/55 mb-5">
+            Illustrative role walkthrough &middot; not a customer review
           </div>
           <p className="text-[22px] md:text-[28px] leading-[1.2] font-medium text-white" style={{ letterSpacing: '-0.03em' }}>
             "{duoQuote.quote}"
           </p>
           <div className="mt-6 pt-6 border-t border-white/15 flex items-center gap-3">
-            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#e8400d] to-[#ffd7f0] flex items-center justify-center text-[13px] font-bold text-[#111111]">JV</div>
+            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#e8400d] to-[#ffd7f0] flex items-center justify-center text-[13px] font-bold text-[#111111]">&sect;</div>
             <div className="flex-1">
               <div className="text-[14px] font-medium text-white">{duoQuote.name}</div>
               <div className="text-[12px] text-white/60">{duoQuote.role}</div>

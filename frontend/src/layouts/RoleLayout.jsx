@@ -312,8 +312,7 @@ export default function RoleLayout({ label, role, accent, sections }) {
               <span>Search</span>
               <span className="border-l border-line-strong pl-1.5 text-ink-400">⌘K</span>
             </button>
-            <span className="pill hidden md:inline-flex" data-testid="env-badge">Live · Production data</span>
-            <Link to="/" className="text-sm text-ink-500 ink-link hidden md:inline-flex items-center gap-1">careeros.app <ArrowUpRight size={12} /></Link>
+            <Link to="/" className="text-sm text-ink-500 ink-link hidden md:inline-flex items-center gap-1">View site <ArrowUpRight size={12} /></Link>
           </div>
         </header>
 

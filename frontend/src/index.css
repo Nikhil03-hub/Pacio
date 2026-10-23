@@ -147,6 +147,16 @@ body {
   transition: transform .25s, background .25s, color .25s;
 }
 .btn:hover { background: var(--accent); border-color: var(--accent); }
+.btn:disabled, .btn[disabled] { opacity: 0.45; pointer-events: none; cursor: not-allowed; }
+/* `num-mono` is used ~52 times as the numeric-data class and was never defined,
+   so roll numbers, percentages and CTC figures rendered in the body font and
+   shifted width as digits changed. tabular-nums keeps dashboards column-aligned. */
+.num-mono {
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
 .btn-ghost { background: transparent; color: var(--ink); }
 .btn-ghost:hover { background: var(--ink); color: var(--bone); }
 

@@ -6,8 +6,8 @@ import { api } from "./lib/api";
 // Pages
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
-import AuthCallback from "./pages/AuthCallback";
 import OnboardingPending from "./pages/OnboardingPending";
+import VerifyCertificate from "./pages/VerifyCertificate";
 
 // Role layouts + homes
 import RoleLayout from "./layouts/RoleLayout";
@@ -88,7 +88,6 @@ function AuthProvider({ children }) {
     finally { setLoading(false); }
   };
   useEffect(() => {
-    if (window.location.hash?.includes("session_id=")) { setLoading(false); return; }
     refresh();
     // eslint-disable-next-line
   }, []);
@@ -123,8 +122,6 @@ function RoleRedirect() {
 }
 
 function AppRouter() {
-  const location = useLocation();
-  if (location.hash?.includes("session_id=")) return <AuthCallback />;
   return (
     <Routes>
       <Route path="/" element={<Landing />} />
@@ -133,6 +130,8 @@ function AppRouter() {
       <Route path="/app" element={<RoleRedirect />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/register" element={<Register />} />
+      {/* Public certificate verification - the code printed on every certificate. */}
+      <Route path="/verify/:certId" element={<VerifyCertificate />} />
 
       {/* ===== PLATFORM (super admin) ===== */}
       <Route path="/platform" element={<Protected allow={["super_admin"]}><RoleLayout {...roleConfig.super_admin} /></Protected>}>

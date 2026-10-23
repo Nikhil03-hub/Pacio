@@ -1464,6 +1464,97 @@ async def deep_health(user=Depends(require_roles("super_admin"))):
     }
 
 
+# ============== AUTH CAPABILITY DISCOVERY ==============
+PASSWORD_AUTH_ENABLED = os.environ.get("PASSWORD_AUTH_ENABLED", "true").strip().lower() in {"1", "true", "yes", "on"}
+
+
+@app.get("/api/auth/config")
+async def auth_config():
+    """Tell the sign-in screen which methods actually work.
+
+    Without this, a deployment whose Google credentials are missing renders a Google
+    button that returns 503, and nobody - including a fresh local clone - can sign in.
+    """
+    google = bool(GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET)
+    return {
+        "google_enabled": google,
+        "password_enabled": PASSWORD_AUTH_ENABLED,
+        "signup_enabled": True,
+    }
+
+
+# ============== CERTIFICATES ==============
+class CertificateIssueBody(BaseModel):
+    cert_id: str
+    student_name: str
+    program: str
+    student_id: Optional[str] = None
+    institution_id: Optional[str] = None
+    issued_on: Optional[str] = None
+    department: Optional[str] = None
+
+
+@app.post("/api/certificates/issue")
+async def issue_certificate(body: CertificateIssueBody, request: Request,
+                            user=Depends(require_roles("super_admin", "tpo", "institution_admin", "faculty"))):
+    """Persist an issued certificate so its verification code resolves to real data.
+
+    Certificates used to be rendered in the browser only: nothing was stored, and the
+    printed QR code pointed at a domain this project does not own, so every scanned
+    certificate led nowhere. Re-issuing the same id is idempotent.
+    """
+    cert_id = (body.cert_id or "").strip().upper()
+    if not cert_id or len(cert_id) > 64:
+        raise HTTPException(422, "cert_id is required and must be 64 characters or fewer")
+    iid = _scope_institution(user, body.institution_id)
+    existing = await db.certificates.find_one({"cert_id": cert_id}, {"_id": 0})
+    if existing:
+        if existing.get("institution_id") != iid and user["role"] != "super_admin":
+            raise HTTPException(403, "Cross-institution access denied")
+        return {"ok": True, "cert_id": cert_id, "status": existing.get("status", "issued"),
+                "reused": True, "verify_path": f"/verify/{cert_id}"}
+
+    doc = {
+        "cert_id": cert_id,
+        "student_id": body.student_id,
+        "student_name": body.student_name,
+        "program": body.program,
+        "department": body.department,
+        "institution_id": iid,
+        "issued_on": body.issued_on or datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+        "status": "issued",
+        "issued_by": user["user_id"],
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.certificates.insert_one(doc)
+    await _audit_log("certificate.issued", user=user, institution_id=iid,
+                     resource="certificate", resource_id=cert_id,
+                     metadata={"program": body.program}, request=request)
+    doc.pop("_id", None)
+    return {"ok": True, "cert_id": cert_id, "status": "issued", "reused": False,
+            "verify_path": f"/verify/{cert_id}"}
+
+
+@app.get("/api/certificates/verify/{cert_id}")
+async def verify_certificate(cert_id: str):
+    """Public verification lookup, deliberately returning only what a verifier needs."""
+    cert_id = (cert_id or "").strip().upper()
+    doc = await db.certificates.find_one({"cert_id": cert_id}, {"_id": 0})
+    if not doc:
+        return {"valid": False, "reason": "not_found", "cert_id": cert_id}
+    inst = await db.institutions.find_one({"institution_id": doc.get("institution_id")}, {"_id": 0})
+    return {
+        "valid": doc.get("status") == "issued",
+        "status": doc.get("status"),
+        "cert_id": cert_id,
+        "holder": doc.get("student_name"),
+        "program": doc.get("program"),
+        "department": doc.get("department"),
+        "issued_on": doc.get("issued_on"),
+        "institution": (inst or {}).get("name"),
+    }
+
+
 # ============== PUBLIC ==============
 @app.get("/api/public/landing-stats")
 async def landing_stats():

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Star } from 'lucide-react';
 
 export default function FinalCTA() {
   const [email, setEmail] = useState('');
@@ -37,15 +36,11 @@ export default function FinalCTA() {
 
         <div className="mt-10 flex flex-wrap items-center justify-center gap-8 text-white/70">
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-0.5">
-              {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-white text-white" />)}
-            </div>
+            <div className="text-[10px] uppercase tracking-eyebrow text-inherit opacity-70">Illustrative &middot; not a customer review</div>
             <span className="text-[12px]">Readiness scoring</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-0.5">
-              {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-white text-white" />)}
-            </div>
+            <div className="text-[10px] uppercase tracking-eyebrow text-inherit opacity-70">Illustrative &middot; not a customer review</div>
             <span className="text-[12px]">Placement reports</span>
           </div>
           <div className="flex items-center gap-2 text-[12px]">

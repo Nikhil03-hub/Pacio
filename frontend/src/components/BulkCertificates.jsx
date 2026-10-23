@@ -1,6 +1,7 @@
 import React from "react";
 import { Document, Page, Image, StyleSheet, pdf } from "@react-pdf/renderer";
 import { renderCertificateToCanvas } from "../lib/certificateRenderer";
+import { api } from "../lib/api";
 
 // Simple landscape page styles
 const styles = StyleSheet.create({
@@ -35,7 +36,11 @@ export async function downloadBulkCertificates(students, certTypeData) {
   const images = [];
 
   for (const s of students) {
-    const certId = `ST-${certTypeData.code || "CRT"}-${s.student_id?.slice(4, 10).toUpperCase() || Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+    // Deterministic id: a random fallback would mint a certificate whose verification
+    // code cannot be reproduced or re-issued.
+    const seed = String(s.student_id || s.roll_number || `${s.name}-${certTypeData.code}`)
+      .replace(/[^A-Za-z0-9]/g, "").toUpperCase().slice(-8);
+    const certId = `ST-${(certTypeData.code || "CRT").toUpperCase()}-${seed}`;
     const dateStr = new Date().toLocaleDateString("en-US", {
       year: "numeric",
       month: "long",
@@ -58,6 +63,16 @@ export async function downloadBulkCertificates(students, certTypeData) {
     // Render this student's certificate to canvas and get base64 image URL
     const imgUrl = await renderCertificateToCanvas(canvas, certData);
     images.push(imgUrl);
+
+    // Record it server-side so the printed QR resolves to a real verification entry.
+    await api.post("/certificates/issue", {
+      cert_id: certId,
+      student_id: s.student_id || null,
+      student_name: s.name,
+      program: certTypeData.title || certTypeData.description || certTypeData.code,
+      department: s.department || null,
+      issued_on: new Date().toISOString().slice(0, 10),
+    });
   }
 
   // Create the PDF instance

@@ -54,7 +54,7 @@ export default function OnboardingPending() {
               <div className="num-mono text-[10px] tracking-[0.24em] text-ink-400">STATUS</div>
               <div className="font-display text-4xl mt-2">Pending approval</div>
               <p className="text-ink-500 mt-4">You will receive an Email + Telegram notification the moment your access is granted. Refresh this page periodically to check status.</p>
-              <button onClick={refresh} className="mt-6 inline-flex items-center gap-2 bg-accent text-bone-100 px-5 py-3 text-sm hover:bg-accent transition-colors" data-testid="refresh-status-btn">
+              <button onClick={refresh} className="mt-6 inline-flex items-center gap-2 bg-accent text-bone-100 px-5 py-3 text-sm hover:bg-accent-hover transition-colors" data-testid="refresh-status-btn">
                 Re-check approval <ArrowRight size={14} />
               </button>
             </div>
@@ -111,7 +111,7 @@ export default function OnboardingPending() {
               </select>
             </label>
             <div className="md:col-span-2 mt-4">
-              <button type="submit" data-testid="signup-submit" className="inline-flex items-center gap-3 bg-accent text-bone-100 px-7 py-4 text-sm font-medium hover:bg-accent transition-colors">
+              <button type="submit" data-testid="signup-submit" className="inline-flex items-center gap-3 bg-accent text-bone-100 px-7 py-4 text-sm font-medium hover:bg-accent-hover transition-colors">
                 Request approval <ArrowRight size={16} />
               </button>
             </div>

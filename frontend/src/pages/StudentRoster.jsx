@@ -101,7 +101,7 @@ export default function StudentRoster() {
           <h1 className="font-display text-5xl md:text-6xl tracking-tightest mt-3">Student roster</h1>
           <p className="font-serif text-lg text-ink-500 mt-2">Every enrolled student, every batch. Filter, sort, and act.</p>
         </div>
-        <button onClick={() => setAdding(true)} data-testid="add-student-btn" className="inline-flex items-center gap-2 bg-accent text-bone-100 px-5 py-3 text-sm hover:bg-accent transition-colors">
+        <button onClick={() => setAdding(true)} data-testid="add-student-btn" className="inline-flex items-center gap-2 bg-accent text-bone-100 px-5 py-3 text-sm hover:bg-accent-hover transition-colors">
           <Plus size={14} /> Add student
         </button>
       </div>
@@ -128,7 +128,7 @@ export default function StudentRoster() {
           <option value="yes">Placed</option>
           <option value="no">Unplaced</option>
         </select>
-        <button onClick={load} data-testid="roster-apply-btn" className="inline-flex items-center gap-2 bg-accent text-bone-100 px-4 py-2 text-sm hover:bg-accent transition-colors">
+        <button onClick={load} data-testid="roster-apply-btn" className="inline-flex items-center gap-2 bg-accent text-bone-100 px-4 py-2 text-sm hover:bg-accent-hover transition-colors">
           <Filter size={14} /> Apply
         </button>
         <span className="num-mono text-[11px] text-ink-400 tracking-[0.18em] ml-auto" data-testid="roster-count">{items.length} STUDENTS</span>
@@ -153,7 +153,7 @@ export default function StudentRoster() {
           </select>
           <input type="number" step="0.01" placeholder="CGPA" value={newStudent.cgpa} onChange={(e) => setNewStudent({ ...newStudent, cgpa: parseFloat(e.target.value) })} className="px-3 py-2 border border-line bg-bone-100 text-sm" />
           <div className="md:col-span-3 flex gap-3">
-            <button type="submit" data-testid="save-student-btn" className="bg-accent text-bone-100 px-5 py-2 text-sm hover:bg-accent">Save</button>
+            <button type="submit" data-testid="save-student-btn" className="bg-accent text-bone-100 px-5 py-2 text-sm hover:bg-accent-hover">Save</button>
             <button type="button" onClick={() => setAdding(false)} className="border border-line px-5 py-2 text-sm">Cancel</button>
           </div>
         </form>

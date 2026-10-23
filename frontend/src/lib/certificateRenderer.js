@@ -169,7 +169,8 @@ export function renderCertificateToCanvas(canvas, data) {
     // 14. Center QR Code Loading with beautiful local fallback
     const qrImg = new window.Image();
     qrImg.crossOrigin = "anonymous";
-    qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=https://careeros.app/verify/${data.certId}`;
+    const verifyUrl = `${window.location.origin}/verify/${data.certId}`;
+    qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=${encodeURIComponent(verifyUrl)}`;
     
     const drawMockQR = () => {
       // Draw border box
