@@ -31,7 +31,7 @@ First 7 must-have features + central admin + Emergent Google OAuth + SendGrid + 
 - `/app/test_reports/iteration_3.json` — Backend 22/22 v2.1 pytest PASS; Frontend ~98%
 - Backend 1094 lines; tests at `/app/backend/tests/test_careeros_v21.py`
 
-## Demo accounts (password `careeros2026`)
+## Demo accounts (password `${DEFAULT_DEMO_PASSWORD}`)
 | Email | Role | Lands on |
 | --- | --- | --- |
 | admin@careeros.app | super_admin | /platform |

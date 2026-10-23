@@ -1,0 +1,22 @@
+Copyright (c) 2026 Pacio / CareerOS Campus Intelligence. All rights reserved.
+
+This repository contains the proprietary source code of the Pacio / CareerOS Campus
+Intelligence platform. Because the project is intended for commercial licensing and
+transfer, no patent, copyright or trademark licence is granted by making this
+repository readable.
+
+You may not copy, modify, distribute, sublicense, sell, host as a service, or create
+derivative works of this software, in whole or in part, without prior written
+permission from the copyright holder.
+
+Third-party material remains under its own terms. In particular:
+  - The bundled DSA curriculum structure follows a widely used public problem
+    sequence whose publisher prohibits commercial redistribution without written
+    consent. See docs/DATA_SOURCES.md before licensing or shipping this dataset.
+  - Seeded institutions, students, recruiters, MOUs, payouts and placement records
+    are demonstration data. Any resemblance to a real institution's outcomes is
+    unverified and must not be presented as fact.
+  - Fonts (Cabinet Grotesk, Satoshi via Fontshare; Fraunces, Inter Tight, JetBrains
+    Mono via Google Fonts) are loaded from public CDNs under their own licences.
+
+Contact the repository owner to arrange a commercial licence or transfer.

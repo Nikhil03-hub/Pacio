@@ -1,8 +1,13 @@
-"""Question-level Striver A2Z catalog used by CareerOS DSA Intelligence.
+"""DSA curriculum catalog used by Campus Intelligence DSA Intelligence.
 
-The current public TakeUforward A2Z sheet reports 474 problems across 18
-sections. CareerOS stores those as question records so student readiness can be
-computed from actual attempts, revision, mastery, and faculty feedback.
+The topic sequence mirrors a widely used public DSA preparation sheet (474 problems
+across 18 sections) so that student progress is comparable with material students
+already follow. That publisher's terms prohibit commercial redistribution without
+written consent - see docs/DATA_SOURCES.md, item DS-4, before this dataset ships in
+a paid product.
+
+Question records drive readiness: attempts, revision, mastery and faculty feedback
+are computed from these rows.
 """
 from __future__ import annotations
 
@@ -32,7 +37,7 @@ STRIVER_TOPICS = [
 ]
 
 DSA_TOTAL = sum(topic["problems"] for topic in STRIVER_TOPICS)
-assert DSA_TOTAL == 474, f"Striver A2Z total drift: {DSA_TOTAL}"
+assert DSA_TOTAL == 474, f"DSA curriculum total drift: {DSA_TOTAL}"
 
 
 SUBTOPIC_PATTERNS = {
@@ -311,7 +316,7 @@ def build_dsa_question_bank(now: datetime | None = None) -> list[dict]:
             question_slug = _slug(title)
             rows.append({
                 "question_id": f"a2z_{topic['code'].lower()}_{index:03d}_{question_slug[:44]}",
-                "sheet": "striver_a2z",
+                "sheet": "campus_dsa_curriculum",
                 "topic_code": topic["code"],
                 "topic_name": topic["name"],
                 "topic_order": topic["order"],
@@ -321,7 +326,7 @@ def build_dsa_question_bank(now: datetime | None = None) -> list[dict]:
                 "difficulty": _difficulty(topic["code"], index),
                 "order": index,
                 "global_order": global_order,
-                "source": "takeuforward_a2z",
+                "source": "internal_curriculum",
                 "created_at": now.isoformat(),
             })
     assert len(rows) == DSA_TOTAL, f"Expected {DSA_TOTAL} DSA questions, got {len(rows)}"

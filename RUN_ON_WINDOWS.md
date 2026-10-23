@@ -85,12 +85,12 @@ Then open **http://localhost:3000**.
 
 | Role | Email | Password |
 | :--- | :--- | :--- |
-| Super admin | `admin@careeros.app` | `careeros2026` |
-| Institution admin | `institution@kmit.in` | `careeros2026` |
-| TPO (placement officer) | `tpo@kmit.in` | `careeros2026` |
-| Faculty | `faculty@kmit.in` | `careeros2026` |
-| Student | `student@kmit.in` | `careeros2026` |
-| Recruiter | `recruiter@amazon.com` | `careeros2026` |
+| Super admin | `admin@careeros.app` | `${DEFAULT_DEMO_PASSWORD}` |
+| Institution admin | `institution@kmit.in` | `${DEFAULT_DEMO_PASSWORD}` |
+| TPO (placement officer) | `tpo@kmit.in` | `${DEFAULT_DEMO_PASSWORD}` |
+| Faculty | `faculty@kmit.in` | `${DEFAULT_DEMO_PASSWORD}` |
+| Student | `student@kmit.in` | `${DEFAULT_DEMO_PASSWORD}` |
+| Recruiter | `recruiter@amazon.com` | `${DEFAULT_DEMO_PASSWORD}` |
 
 > Use **these** accounts to demo — they're bound to KMIT, which is fully populated. If you sign up a brand-new college through the signup form, it will (correctly) start empty.
 

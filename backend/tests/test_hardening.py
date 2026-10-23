@@ -360,3 +360,70 @@ def test_startup_creates_indexes_on_the_real_database(monkeypatch):
     assert repr("token_hash") in names, "reset tokens must be looked up by digest"
     ttl = [k for a, k in calls if a == ("expires_at",) and k.get("expireAfterSeconds") == 0]
     assert ttl, "password reset tokens must expire in the database, not only in app code"
+
+
+# ------------------------------------------------- auth capability + certificates
+
+def test_auth_config_reports_available_methods(anon_client):
+    """The login screen must not offer a button that returns 503."""
+    res = anon_client.get("/api/auth/config")
+    assert res.status_code == 200
+    body = res.json()
+    assert set(body) == {"google_enabled", "password_enabled", "signup_enabled"}
+    assert body["google_enabled"] is False  # no Google credentials in a test environment
+    assert isinstance(body["password_enabled"], bool)
+
+
+def test_issued_certificate_verifies_publicly(client, tokens, anon_client):
+    issue = client.post(
+        "/api/certificates/issue",
+        headers=auth(tokens["tpo"]),
+        json={"cert_id": "st-crt-roundtrip1", "student_name": "Test Holder",
+              "program": "Interview Master", "department": "ECE", "issued_on": "2026-10-23"},
+    )
+    assert issue.status_code == 200, issue.text
+    assert issue.json()["verify_path"] == "/verify/ST-CRT-ROUNDTRIP1"
+
+    check = anon_client.get("/api/certificates/verify/ST-CRT-ROUNDTRIP1")
+    assert check.status_code == 200
+    body = check.json()
+    assert body["valid"] is True
+    assert body["holder"] == "Test Holder"
+    assert body["program"] == "Interview Master"
+    assert body["institution"], "verification must name the issuing institution"
+    # A public endpoint must not leak more than a verifier needs.
+    assert "issued_by" not in body and "student_id" not in body
+
+
+def test_reissuing_the_same_certificate_is_idempotent(client, tokens):
+    payload = {"cert_id": "ST-CRT-IDEMPOTENT", "student_name": "Repeat Holder", "program": "CRT"}
+    first = client.post("/api/certificates/issue", headers=auth(tokens["tpo"]), json=payload)
+    second = client.post("/api/certificates/issue", headers=auth(tokens["tpo"]), json=payload)
+    assert first.status_code == second.status_code == 200
+    assert second.json()["reused"] is True
+
+
+def test_certificate_verification_rejects_other_tenants(client, tokens):
+    """A college must not be able to mint certificates against another institution."""
+    other = client.post(
+        "/api/certificates/issue",
+        headers=auth(tokens["tpo"]),
+        json={"cert_id": "ST-CRT-CROSSTENANT", "student_name": "X", "program": "Y",
+              "institution_id": "inst_of_another_college"},
+    )
+    assert other.status_code == 403
+
+
+def test_unknown_certificate_is_reported_as_not_found_not_an_error(anon_client):
+    res = anon_client.get("/api/certificates/verify/DOES-NOT-EXIST")
+    assert res.status_code == 200
+    assert res.json()["valid"] is False
+    assert res.json()["reason"] == "not_found"
+
+
+def test_certificate_id_length_is_bounded(client, tokens):
+    res = client.post(
+        "/api/certificates/issue", headers=auth(tokens["tpo"]),
+        json={"cert_id": "X" * 200, "student_name": "n", "program": "p"},
+    )
+    assert res.status_code == 422

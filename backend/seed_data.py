@@ -1,5 +1,5 @@
 """Massive seed across institutions, departments (engineering/MBA/pharma/medical/diploma/degree),
-students, recruiters, jobs, applications, DSA progress (Striver A2Z), aptitude, ATS, interviews,
+students, recruiters, jobs, applications, DSA progress (curriculum catalog), aptitude, ATS, interviews,
 announcements, training programs, and KMIT real placement data 2017-18 â†’ 2025-26.
 """
 from __future__ import annotations
@@ -983,7 +983,7 @@ def seed_payload() -> dict:
             docs["students"].append(stu)
             student_pool.append(stu)
 
-    # -- DSA progress (Striver A2Z) for engineering students --
+    # -- DSA progress (curriculum catalog) for engineering students --
     core_ids = {"inst_kmit", "inst_vnr", "inst_vce", "inst_cbit", "inst_cvr", "inst_mgit", "inst_mvsrec", "inst_bvrit"}
     students_by_inst = {}
     for s in student_pool:
@@ -1173,7 +1173,7 @@ def seed_payload() -> dict:
     # -- Announcements --
     announcements_seed = [
         ("Amazon SDE drive â€” Feb 14", "Tier-1 hiring drive open for CSE / IT / CSE-AIML 2025 batch. Eligibility 7.5 CGPA. Apply by 10 Feb.", "tpo", "drive"),
-        ("DSA Olympiad â€” Jan 28", "Striver A2Z based intra-institute competition. Top 10 win Goldman mentorship.", "tpo", "training"),
+        ("DSA Olympiad â€” Jan 28", "Curriculum-based intra-institute competition. Top 10 win Goldman mentorship.", "tpo", "training"),
         ("Mock interview clinic â€” every Friday", "Faculty-led mock interview slots open for 4th year. Book via student portal.", "faculty", "training"),
         ("Salesforce Trailhead Quest", "Earn 5+ badges to be auto-shortlisted for Salesforce drive.", "tpo", "drive"),
         ("Faculty FDP â€” AI in Pharma", "Two-week FDP starting 5 Feb, JNTUH approved.", "institution_admin", "fdp"),
