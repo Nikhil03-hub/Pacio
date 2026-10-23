@@ -10,7 +10,7 @@ rebased, stashed or reset. Working trees are preserved.
 | Absolute path | `C:\Users\NIKHIL\OneDrive\ドキュメント\Claude Projects\Career Guidance\Pacio-Merged` |
 | Remote (fetch/push) | `https://github.com/Nikhil03-hub/pacio-intelligence.git` (public) |
 | Branch | `main`, tracking `origin/main` |
-| State | **6 commits ahead of origin, not pushed**, working tree clean |
+| State | **8 commits ahead of origin, not pushed**, working tree clean |
 | Baseline before this work | `6aa0f44` ("Auth redesign…") — clean tree except untracked `pacio-audit-findings.md` |
 | Cumulative diff vs origin | run `git diff --stat origin/main..HEAD` for the authoritative count; the table below lists every checkpoint |
 
@@ -24,6 +24,8 @@ rebased, stashed or reset. Working trees are preserved.
 | `6eb2a73` | Correct documented test counts to the verified run | docs |
 | `0736e5c` | Repair the MongoDB path (full seed, aptitude/resume backfills, health), add fail-closed production, shared-store rate limiting, central approval gate, staff-only exports; Tenant B matrix + real-Mongo integration tests; release readiness + provenance registry | backend, tests, docs |
 | `efa1359` | Fix the partial unique index on resume tokens (E11000 on nulls broke every ATS endpoint on Mongo); decouple derived backfills; record F-10..F-16; remove remaining password literals | backend, tests, docs |
+| `e87c536` | Record the final verified legacy run (73/73 on the previous catalogue) | docs |
+| `b5a4754` | Replace the third-party DSA sheet with the original 12-topic / 108-problem curriculum; fix orphaned seeding; stop fabricated Jooble listings; add backup/restore + migration scripts, DATABASE_RECOVERY and CREDENTIAL_REMEDIATION; track `.env.example`; ignore backups | backend, frontend strings, tests, scripts, docs |
 
 ### Files that exist but are deliberately NOT in git
 `backend/.env` (local secrets, git-ignored), `frontend/.env.local` (dev API URL,

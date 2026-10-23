@@ -7,9 +7,9 @@ Current state, what changed, what is blocked, and how to verify it yourself.
 | | |
 | --- | --- |
 | Repository | `Pacio-Merged`, remote `Nikhil03-hub/pacio-intelligence` (**public**) |
-| Branch | `main`; five local commits added in this work, **not pushed** |
+| Branch | `main`; **eight local commits** added in this work, **not pushed** |
 | Baseline before this work | HEAD `6aa0f44`, clean tree except one untracked audit file |
-| Tests | 32 hardening + 20 tenant-boundary + 3 real-MongoDB + 73 legacy (re-run after the curriculum change in progress) |
+| Tests | **32 hardening + 20 tenant-boundary + 3 real-MongoDB + 73 legacy** (legacy: 72/73 in the full post-curriculum run; the single stale title assertion was corrected and passes in isolation) |
 | Frontend build | Compiles clean; 884 kB gzipped JS |
 | Live site | `https://pacio-two.vercel.app` reachable; **not modified** by this work |
 | Sub-product | `../skill-tank-partner-platform` - Next.js/Supabase, has **uncommitted** work |
