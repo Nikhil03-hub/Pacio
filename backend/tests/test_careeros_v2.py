@@ -28,6 +28,17 @@ def _login(email, password=PWD):
     r = s.post(f"{API}/auth/login", json={"email": email, "password": password})
     return s, r
 
+def _reset_pending_demo(admin_session=None):
+    """The anonymous /api/test/reset-pending route was removed for security; this is the
+    admin-authenticated equivalent used to restore the onboarding demo state."""
+    if admin_session is not None:
+        admin_session.post(f"{API}/admin/reset-pending-approval")
+        return
+    s, r = _login(DEMO["admin"])
+    s.post(f"{API}/admin/reset-pending-approval")
+
+
+
 
 @pytest.fixture(scope="module")
 def admin_session():
@@ -66,7 +77,13 @@ def test_health():
 
 
 def test_deep_health():
-    r = requests.get(f"{API}/health/deep")
+    # Deep health reports tenant counts, so it is admin-only now; anonymous callers
+    # must get 401 rather than a free map of the deployment.
+    anon = requests.get(f"{API}/health/deep")
+    assert anon.status_code == 401
+    admin_s, admin_r = _login(DEMO["admin"])
+    assert admin_r.status_code == 200
+    r = admin_s.get(f"{API}/health/deep")
     assert r.status_code == 200
     data = r.json()
     assert data["status"] in {"ready", "degraded"}
@@ -115,7 +132,7 @@ def test_login_each_role(role, email, expected_role):
 
 
 def test_login_pending_account():
-    requests.post(f"{API}/test/reset-pending")
+    _reset_pending_demo()
     s, r = _login(DEMO["pending"])
     assert r.status_code == 200
     assert r.json()["user"]["approved"] is False
@@ -666,7 +683,7 @@ def test_mou_tpo(tpo_session):
 
 # ---------- admin: approval flow ----------
 def test_admin_pending_and_approve(admin_session):
-    requests.post(f"{API}/test/reset-pending")
+    _reset_pending_demo(admin_session)
     pending = admin_session.get(f"{API}/admin/pending-signups")
     assert pending.status_code == 200
     items = pending.json()["items"]

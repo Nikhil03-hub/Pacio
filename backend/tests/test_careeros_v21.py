@@ -163,25 +163,31 @@ class TestInvites:
         r = tpo_s.post(f"{API}/invite", json=payload)
         assert r.status_code in (200, 201), r.text
         body = r.json()
-        assert "user_id" in body and "temp_password" in body
+        # Invitations no longer mint a shared password; access activates on the
+        # invitee's first Google sign-in for that email.
+        assert body["user_id"] and "temp_password" not in body
+        assert body["status"] == "invited"
         return body
 
     def test_invite_creates_user(self, invited_user):
         assert invited_user["email"].lower() == self.INVITE_EMAIL.lower()
 
-    def test_new_user_can_login(self, invited_user):
+    def test_invited_user_has_no_shared_password(self, invited_user):
+        """A password-less invitation must not be guessable with the demo credential."""
         s = requests.Session()
         r = s.post(f"{API}/auth/login", json={"email": self.INVITE_EMAIL,
-                                              "password": invited_user["temp_password"]})
-        assert r.status_code == 200, r.text
-        body = r.json()
-        assert body["user"]["role"] == "faculty"
-        assert body["user"]["institution_id"] == "inst_kmit"
+                                              "password": PWD})
+        assert r.status_code == 401, "invited account must not accept the demo password"
 
-    def test_duplicate_invite_returns_409(self, tpo_s, invited_user):
+    def test_reinvite_updates_scope(self, tpo_s, invited_user):
+        """Re-inviting must succeed and re-scope the existing account, not dead-end."""
         r = tpo_s.post(f"{API}/invite", json={
-            "email": self.INVITE_EMAIL, "name": "Dup", "role": "faculty"})
-        assert r.status_code == 409
+            "email": self.INVITE_EMAIL, "name": "Re-invited", "role": "tpo",
+            "department": "CSE"})
+        assert r.status_code == 200, r.text
+        users = tpo_s.get(f"{API}/institution/users").json()["items"]
+        match = next(u for u in users if u["email"].lower() == self.INVITE_EMAIL.lower())
+        assert match["role"] == "tpo"
 
     def test_list_institution_users_includes_invite(self, tpo_s, invited_user):
         r = tpo_s.get(f"{API}/institution/users")

@@ -90,7 +90,10 @@ async def get_session_user(request: Request):
         session_query = {"jwt_id": claims["jti"]}
 
     sess = await db.user_sessions.find_one(session_query, {"_id": 0})
-    if not sess and not claims:
+    # A well-formed, correctly signed token is not enough on its own: the session row
+    # behind it must still exist. Without this, logout and password-reset revocation
+    # only ever invalidated cookie sessions, and stolen bearer tokens stayed valid.
+    if not sess:
         raise HTTPException(401, "Invalid session")
 
     if sess:

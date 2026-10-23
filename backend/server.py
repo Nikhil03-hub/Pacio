@@ -9,6 +9,8 @@ from __future__ import annotations
 import os
 import io
 import re
+import secrets
+import hashlib
 import uuid
 import logging
 import time
@@ -24,7 +26,7 @@ import httpx
 from fastapi import FastAPI, HTTPException, Request, Response, Depends, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, StreamingResponse, RedirectResponse
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlsplit
 from fastapi.staticfiles import StaticFiles
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorGridFSBucket
 from pydantic import BaseModel, EmailStr
@@ -35,6 +37,7 @@ from seed_data import (
 )
 from notification_service import notify
 from auth import (
+    JWT_SECRET,
     hash_password,
     verify_password,
     create_access_token,
@@ -58,14 +61,31 @@ log = logging.getLogger("careeros")
 ROOT = Path(__file__).parent
 
 MONGO_URL = os.environ.get("MONGO_URL")
+# Default intentionally still "careeros": the deployed Atlas database already uses
+# it. Changing this default would silently point every tenant at a new empty database.
 DB_NAME = os.environ.get("DB_NAME", "careeros")
 EMERGENT_AUTH_URL = os.environ.get("EMERGENT_AUTH_URL", "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data")
+EMERGENT_AUTH_ENABLED = os.environ.get("EMERGENT_AUTH_ENABLED", "false").strip().lower() in {"1", "true", "yes", "on"}
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET")
 GOOGLE_REDIRECT_URI = os.environ.get("GOOGLE_REDIRECT_URI")
-ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL")
+ADMIN_EMAIL = (os.environ.get("ADMIN_EMAIL") or "").strip().lower() or None
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD")
 DEFAULT_DEMO_PASSWORD = os.environ.get("DEFAULT_DEMO_PASSWORD")
+# Canonical public origin. When unset, request-derived hosts are validated against
+# ALLOWED_ORIGINS instead of being trusted, so a spoofed Host header cannot steer
+# password-reset links or the OAuth redirect to an attacker domain.
+PUBLIC_BASE_URL = (os.environ.get("PUBLIC_BASE_URL") or "").strip().rstrip("/") or None
+SEED_DEMO_DATA = os.environ.get("SEED_DEMO_DATA", "true").strip().lower() in {"1", "true", "yes", "on"}
+SEED_DEMO_USERS = os.environ.get("SEED_DEMO_USERS", "false").strip().lower() in {"1", "true", "yes", "on"}
+# Uploaded documents are opened by institution staff; cap size and type so the
+# bucket cannot be used as general-purpose file hosting.
+MAX_UPLOAD_BYTES = int(os.environ.get("MAX_UPLOAD_BYTES", str(10 * 1024 * 1024)))
+ALLOWED_UPLOAD_EXTENSIONS = {
+    ext.strip().lower()
+    for ext in (os.environ.get("ALLOWED_UPLOAD_EXTENSIONS") or ".pdf,.doc,.docx,.png,.jpg,.jpeg").split(",")
+    if ext.strip()
+}
 
 client = None
 if MONGO_URL:
@@ -179,14 +199,100 @@ def _cookie_secure(request: Request) -> bool:
     return forwarded_proto == "https" or request.url.scheme == "https"
 
 
+def _allowed_hosts() -> set[str]:
+    hosts = set()
+    for origin in ALLOWED_ORIGINS:
+        netloc = urlsplit(origin).netloc
+        if netloc:
+            hosts.add(netloc.lower())
+    return hosts
+
+
 def _public_origin(request: Request) -> str:
-    proto = request.headers.get("x-forwarded-proto", request.url.scheme).split(",", 1)[0].strip()
-    host = request.headers.get("x-forwarded-host") or request.headers.get("host") or request.url.netloc
-    return f"{proto}://{host}"
+    """Trusted base URL for links the app sends by email (password resets, invites).
+
+    The request Host header is attacker-controlled, so it is only ever used when it
+    matches a configured origin; otherwise we fall back to the first allowlisted one.
+    """
+    if PUBLIC_BASE_URL:
+        return PUBLIC_BASE_URL
+    host = (request.headers.get("x-forwarded-host") or request.headers.get("host") or "").split(",", 1)[0].strip().lower()
+    if host and host in _allowed_hosts():
+        proto = request.headers.get("x-forwarded-proto", request.url.scheme).split(",", 1)[0].strip() or "https"
+        return f"{proto}://{host}"
+    return ALLOWED_ORIGINS[0].rstrip("/")
 
 
 def _google_redirect_uri(request: Request) -> str:
     return GOOGLE_REDIRECT_URI or f"{_public_origin(request)}/api/auth/google/callback"
+
+
+MIN_PASSWORD_LENGTH = 8
+
+
+def _hash_reset_token(raw_token: str) -> str:
+    return hashlib.sha256((raw_token or "").encode("utf-8")).hexdigest()
+
+
+def _safe_filename(original: str) -> str:
+    """Strip any path components a client may send in a multipart filename."""
+    name = (original or "document").replace("\\", "/").split("/")[-1].strip()
+    return name[:120] or "document"
+
+
+def _validate_upload(file: UploadFile, content: bytes) -> str:
+    ext = "." + file.filename.rsplit(".", 1)[-1].lower() if file.filename and "." in file.filename else ""
+    if ext not in ALLOWED_UPLOAD_EXTENSIONS:
+        raise HTTPException(415, f"Unsupported file type '{ext or 'unknown'}'. Allowed: {', '.join(sorted(ALLOWED_UPLOAD_EXTENSIONS))}")
+    if len(content) > MAX_UPLOAD_BYTES:
+        raise HTTPException(413, f"File is larger than {MAX_UPLOAD_BYTES // (1024 * 1024)} MB")
+    if not content:
+        raise HTTPException(400, "Uploaded file is empty")
+    return ext
+
+
+UPLOAD_MEDIA_TYPES = {
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "image/png",
+    "image/jpeg",
+}
+
+
+def _download_media_type(content_type: Optional[str]) -> str:
+    """Never replay a client-supplied MIME type back to the browser."""
+    return content_type if content_type in UPLOAD_MEDIA_TYPES else "application/octet-stream"
+
+
+def _safe_download_name(original: Optional[str]) -> str:
+    """Keep quotes and newlines out of the Content-Disposition header."""
+    return re.sub(r"[^A-Za-z0-9._-]", "_", _safe_filename(original or "document"))[:100]
+
+
+# The deployment historically used one seeded college (inst_kmit) as the implicit
+# tenant for the platform admin. It is now an explicit, configurable default instead
+# of a hardcoded value repeated across dozens of routes.
+DEFAULT_INSTITUTION_ID = (os.environ.get("DEFAULT_INSTITUTION_ID") or "inst_kmit").strip()
+
+
+def _scope_institution(user: dict, requested: Optional[str] = None) -> str:
+    """Resolve the only institution id a caller is allowed to read or write.
+
+    Previously 23 routes did `user.get("institution_id") or "inst_kmit"`, which meant
+    any account without an attached institution (new Google sign-ins, invitations
+    awaiting scope, mis-provisioned tenants) silently landed on another college's
+    roster, documents and reports. Non-admins are now pinned to their own tenant and
+    refused when none exists.
+    """
+    if user.get("role") == "super_admin":
+        return (requested or "").strip() or DEFAULT_INSTITUTION_ID
+    if requested and requested != user.get("institution_id"):
+        raise HTTPException(403, "Cross-institution access denied")
+    own = user.get("institution_id")
+    if not own:
+        raise HTTPException(403, "No institution is attached to this account yet")
+    return own
 
 
 async def _create_session(user_id: str, response: Response, request: Request, token: Optional[str] = None) -> str:
@@ -822,7 +928,7 @@ async def _recruiter_talent_pool_payload(
 
 
 async def _student_scope_for_user(user: dict, *, department: Optional[str] = None) -> tuple[str, Optional[str], list[dict]]:
-    iid = user.get("institution_id") or "inst_kmit"
+    iid = _scope_institution(user)
     if user.get("role") == "student" and user.get("student_id"):
         student = await db.students.find_one({"student_id": user["student_id"]}, {"_id": 0})
         return iid, student.get("department") if student else None, [student] if student else []
@@ -1018,6 +1124,84 @@ async def _student_dsa_question_payload(student: dict) -> dict:
 
 
 # ============== STARTUP - seed + demo users ==============
+def _demo_account_specs() -> list[dict]:
+    """Which login accounts startup is allowed to create.
+
+    The platform admin is bootstrapped only when ADMIN_EMAIL and ADMIN_PASSWORD are
+    both configured. The role demo accounts are opt-in via SEED_DEMO_USERS: creating
+    them automatically meant every deployment shipped a super_admin whose password was
+    published in this repository's own docs.
+    """
+    specs: list[dict] = []
+    if ADMIN_EMAIL and ADMIN_PASSWORD:
+        specs.append({
+            "email": ADMIN_EMAIL, "name": "Platform Super Admin", "role": "super_admin",
+            "institution_id": None, "department": None,
+        })
+    if not SEED_DEMO_USERS:
+        return specs
+    specs.extend([
+        {"email": "institution@kmit.in", "name": "KMIT - Institution Admin", "role": "institution_admin", "institution_id": "inst_kmit"},
+        {"email": "tpo@kmit.in", "name": "Dr. Neil Gogte", "role": "tpo", "institution_id": "inst_kmit"},
+        {"email": "faculty@kmit.in", "name": "Prof. Lavanya Iyer", "role": "faculty", "institution_id": "inst_kmit", "department": "CSE"},
+        {"email": "student@kmit.in", "name": "Aarav Reddy", "role": "student", "institution_id": "inst_kmit", "department": "CSE"},
+        {"email": "recruiter@amazon.com", "name": "Priya Sharma (Amazon)", "role": "recruiter", "institution_id": None, "department": None},
+        {"email": "tpo@vasavi.ac.in", "name": "Dr. Suresh Kumar", "role": "tpo", "institution_id": "inst_vasavi_pending", "approved": False},
+    ])
+    return specs
+
+
+def _seed_password_for(role: str) -> Optional[str]:
+    """Password used when startup creates or repairs an account, or None for Google-only.
+
+    None is deliberate: _new_user then leaves password_hash unset instead of hashing a
+    missing env var, which used to raise inside bcrypt and abort startup.
+    """
+    return ADMIN_PASSWORD if role == "super_admin" else DEFAULT_DEMO_PASSWORD
+
+
+async def _ensure_indexes():
+    """Create indexes on the real database.
+
+    This lived only in the in-memory startup branch, so a production MongoDB never got
+    the unique email index, the jti uniqueness behind session lookup, or the TTL index
+    that expires password-reset tokens.
+    """
+    await db.users.create_index("email", unique=True)
+    await db.user_sessions.create_index("jwt_id", unique=True)
+    await db.user_sessions.create_index("expires_at")
+    await db.audit_logs.create_index("created_at")
+    await db.dsa_questions.create_index("question_id", unique=True)
+    await db.dsa_question_progress.create_index("student_id")
+    await db.dsa_question_progress.create_index("question_id")
+    await db.dsa_code_submissions.create_index("student_id")
+    await db.dsa_code_submissions.create_index("question_id")
+    await db.aptitude_questions.create_index("question_id", unique=True)
+    await db.aptitude_question_progress.create_index("student_id")
+    await db.aptitude_question_progress.create_index("question_id")
+    await db.aptitude_test_sessions.create_index("student_id")
+    await db.aptitude_test_attempts.create_index("student_id")
+    await db.mock_interview_sessions.create_index("student_id")
+    await db.resume_versions.create_index("student_id")
+    await db.resume_versions.create_index("download_token", unique=True)
+    await db.recruiter_shortlists.create_index("recruiter_id")
+    await db.recruiter_saved_filters.create_index("recruiter_id")
+    await db.password_reset_tokens.create_index("token_hash", unique=True)
+    await db.password_reset_tokens.create_index("expires_at", expireAfterSeconds=0)
+    await db.comm_log.create_index("institution_id")
+    await db.revenue_share.create_index("institution_id")
+    await db.students.create_index([("institution_id", 1), ("department", 1)])
+    await db.saved_jobs.create_index([("user_id", 1), ("job_id", 1)], unique=True)
+
+
+async def _purge_expired_sessions():
+    cutoff = datetime.now(timezone.utc).isoformat()
+    rows = await db.user_sessions.find({}, {"_id": 0, "jwt_id": 1, "expires_at": 1}).to_list(2000)
+    stale = [r["jwt_id"] for r in rows if r.get("expires_at") and str(r["expires_at"]) < cutoff]
+    if stale:
+        await db.user_sessions.delete_many({"jwt_id": {"$in": stale}})
+
+
 async def _ensure_database():
     global client, db, gridfs
     if not MONGO_URL or client is not None:
@@ -1026,27 +1210,21 @@ async def _ensure_database():
     db = client[DB_NAME]
     gridfs = AsyncIOMotorGridFSBucket(db, bucket_name="mou_files")
     await db.command("ping")
+    await _ensure_indexes()
+    await _purge_expired_sessions()
 
 
 async def _ensure_production_minimums():
     seed_columns = ["institutions", "students", "recruiters", "applications", "mous", "revenue_share"]
     missing_seed_columns = [col for col in seed_columns if await db[col].count_documents({}) == 0]
-    if missing_seed_columns:
+    if SEED_DEMO_DATA and missing_seed_columns:
         payload = seed_payload()
         for col in missing_seed_columns:
             items = payload.get(col, [])
             if items:
                 await db[col].insert_many(items)
 
-    demo_users = [
-        {"email": ADMIN_EMAIL, "name": "Platform Super Admin", "role": "super_admin", "institution_id": None, "department": None},
-        {"email": "institution@kmit.in", "name": "KMIT - Institution Admin", "role": "institution_admin", "institution_id": "inst_kmit"},
-        {"email": "tpo@kmit.in", "name": "Dr. Neil Gogte", "role": "tpo", "institution_id": "inst_kmit"},
-        {"email": "faculty@kmit.in", "name": "Prof. Lavanya Iyer", "role": "faculty", "institution_id": "inst_kmit", "department": "CSE"},
-        {"email": "student@kmit.in", "name": "Aarav Reddy", "role": "student", "institution_id": "inst_kmit", "department": "CSE"},
-        {"email": "recruiter@amazon.com", "name": "Priya Sharma (Amazon)", "role": "recruiter", "institution_id": None, "department": None},
-        {"email": "tpo@vasavi.ac.in", "name": "Dr. Suresh Kumar", "role": "tpo", "institution_id": "inst_vasavi_pending", "approved": False},
-    ]
+    demo_users = _demo_account_specs()
     for d in demo_users:
         existing = await db.users.find_one({"email": d["email"]})
         if existing is None:
@@ -1054,7 +1232,7 @@ async def _ensure_production_minimums():
                 email=d["email"], name=d["name"], role=d["role"],
                 institution_id=d.get("institution_id"),
                 department=d.get("department"),
-                password=DEFAULT_DEMO_PASSWORD if d["role"] != "super_admin" else ADMIN_PASSWORD,
+                password=_seed_password_for(d["role"]),
                 approved=d.get("approved", True),
             )
             if d["role"] == "student":
@@ -1079,8 +1257,9 @@ async def _ensure_production_minimums():
                 "approved": d.get("approved", True),
             }})
             if not existing.get("password_hash"):
-                pw = ADMIN_PASSWORD if d["role"] == "super_admin" else DEFAULT_DEMO_PASSWORD
-                await db.users.update_one({"email": d["email"]}, {"$set": {"password_hash": hash_password(pw)}})
+                pw = _seed_password_for(d["role"])
+                if pw:
+                    await db.users.update_one({"email": d["email"]}, {"$set": {"password_hash": hash_password(pw)}})
             if d["role"] == "student" and not existing.get("student_id"):
                 real_stu = await db.students.find_one(
                     {"institution_id": "inst_kmit", "department": "CSE"}, {"_id": 0}
@@ -1111,6 +1290,10 @@ async def _ensure_production_minimums():
 
 @app.on_event("startup")
 async def _startup():
+    if not JWT_SECRET:
+        # Without a secret, every session token is unsigned or shares a well-known key.
+        # Refuse to boot rather than run an authentication layer that silently cannot work.
+        raise RuntimeError("JWT_SECRET is not configured — refusing to start without a session-signing key")
     await _ensure_database()
     if MONGO_URL:
         await _ensure_production_minimums()
@@ -1169,16 +1352,7 @@ async def _startup():
     if await db.resume_versions.count_documents({}) == 0 and await db.ats_reports.count_documents({}) > 0:
         await _ensure_resume_versions_for_students()
 
-    demo_users = [
-        {"email": ADMIN_EMAIL, "name": "Platform Super Admin", "role": "super_admin", "institution_id": None, "department": None},
-        {"email": "institution@kmit.in", "name": "KMIT — Institution Admin", "role": "institution_admin", "institution_id": "inst_kmit"},
-        {"email": "tpo@kmit.in", "name": "Dr. Neil Gogte", "role": "tpo", "institution_id": "inst_kmit"},
-        {"email": "faculty@kmit.in", "name": "Prof. Lavanya Iyer", "role": "faculty", "institution_id": "inst_kmit", "department": "CSE"},
-        {"email": "student@kmit.in", "name": "Aarav Reddy", "role": "student", "institution_id": "inst_kmit", "department": "CSE"},
-        {"email": "recruiter@amazon.com", "name": "Priya Sharma (Amazon)", "role": "recruiter", "institution_id": None, "department": None},
-        # Legacy / approval-flow demo
-        {"email": "tpo@vasavi.ac.in", "name": "Dr. Suresh Kumar", "role": "tpo", "institution_id": "inst_vasavi_pending", "approved": False},
-    ]
+    demo_users = _demo_account_specs()
     for d in demo_users:
         existing = await db.users.find_one({"email": d["email"]})
         if existing is None:
@@ -1186,7 +1360,7 @@ async def _startup():
                 email=d["email"], name=d["name"], role=d["role"],
                 institution_id=d.get("institution_id"),
                 department=d.get("department"),
-                password=DEFAULT_DEMO_PASSWORD if d["role"] != "super_admin" else ADMIN_PASSWORD,
+                password=_seed_password_for(d["role"]),
                 approved=d.get("approved", True),
             )
             # Bind student demo to a real seeded student row AND patch the student record
@@ -1216,8 +1390,9 @@ async def _startup():
             }})
             # Refresh password if missing or admin-password-changed
             if not existing.get("password_hash"):
-                pw = ADMIN_PASSWORD if d["role"] == "super_admin" else DEFAULT_DEMO_PASSWORD
-                await db.users.update_one({"email": d["email"]}, {"$set": {"password_hash": hash_password(pw)}})
+                pw = _seed_password_for(d["role"])
+                if pw:
+                    await db.users.update_one({"email": d["email"]}, {"$set": {"password_hash": hash_password(pw)}})
             # Ensure student↔student_id link is set and student name matches
             if d["role"] == "student" and not existing.get("student_id"):
                 real_stu = await db.students.find_one(
@@ -1265,11 +1440,12 @@ async def _startup():
 # ============== HEALTH ==============
 @app.get("/api/health")
 async def health():
-    return {"status": "ok", "service": "careeros-v2"}
+    # Liveness only — never expose tenant counts to an anonymous caller.
+    return {"status": "ok", "service": "pacio-campus-intelligence"}
 
 
 @app.get("/api/health/deep")
-async def deep_health():
+async def deep_health(user=Depends(require_roles("super_admin"))):
     checks = {
         "database": "mongo" if MONGO_URL else "memory",
         "students": await db.students.count_documents({}),
@@ -1281,7 +1457,7 @@ async def deep_health():
     ready = checks["students"] > 0 and checks["institutions"] > 0 and checks["recruiters"] > 0
     return {
         "status": "ready" if ready else "degraded",
-        "service": "careeros-v3",
+        "service": "pacio-campus-intelligence",
         "release": "v3-phases-7-10",
         "checks": checks,
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -1291,17 +1467,27 @@ async def deep_health():
 # ============== PUBLIC ==============
 @app.get("/api/public/landing-stats")
 async def landing_stats():
-    years = await db.year_summaries.find({"institution_id": "inst_kmit"}, {"_id": 0}).sort("academic_year", -1).to_list(20)
+    # Public marketing numbers must be real aggregates, not one college's figures
+    # presented as platform-wide totals.
+    featured = DEFAULT_INSTITUTION_ID
+    years = await db.year_summaries.find({"institution_id": featured}, {"_id": 0}).sort("academic_year", -1).to_list(20)
     pipeline = [
-        {"$match": {"institution_id": "inst_kmit"}},
         {"$group": {"_id": "$company", "selects": {"$sum": "$selects"}, "max_ctc": {"$max": "$ctc_lpa"}}},
         {"$sort": {"selects": -1}}, {"$limit": 24},
     ]
     top = await db.placement_records.aggregate(pipeline).to_list(40)
-    top = [{"company": r["_id"], "selects": r["selects"], "max_ctc": r["max_ctc"]} for r in top]
+    top = [{"company": r["_id"], "selects": r["selects"], "max_ctc": r["max_ctc"]} for r in top if r.get("_id")]
     n_students = await db.students.count_documents({})
     n_inst = await db.institutions.count_documents({"approved": True})
-    return {"years": years, "top_recruiters": top, "totals": {"students": n_students, "institutions": n_inst}}
+    rows = await db.placement_records.find({}, {"_id": 0, "selects": 1, "company": 1}).to_list(5000)
+    n_offers = sum(int(r.get("selects") or 0) for r in rows)
+    n_companies = len({r.get("company") for r in rows if r.get("company")})
+    return {
+        "years": years,
+        "featured_institution": featured,
+        "top_recruiters": top,
+        "totals": {"students": n_students, "institutions": n_inst, "offers": n_offers, "companies": n_companies},
+    }
 
 
 # ============== AUTH ==============
@@ -1325,6 +1511,10 @@ async def login(body: LoginBody, request: Request, response: Response):
 
 @app.post("/api/auth/session")
 async def auth_session(request: Request, response: Response):
+    if not EMERGENT_AUTH_ENABLED:
+        # Legacy Emergent-platform login. It authenticates whoever the third-party
+        # endpoint says the email is, so it is off unless explicitly enabled.
+        raise HTTPException(410, "Emergent session auth is disabled. Use Google sign-in.")
     body = await request.json()
     session_id = body.get("session_id")
     if not session_id:
@@ -1483,12 +1673,23 @@ async def list_students(
         query["institution_id"] = user["institution_id"]
     if user["role"] == "faculty" and user.get("department"):
         query["department"] = user["department"]
+    if user["role"] == "student":
+        # Institution membership is not a licence to read every classmate's phone
+        # number, CGPA and placement status. Students resolve only their own record,
+        # which is all the interview-schedule view needs.
+        if not user.get("student_id"):
+            return {"items": [], "count": 0}
+        query["student_id"] = user["student_id"]
     if department:
         query["department"] = department
     if placed is not None:
         query["placement.placed"] = placed
     if q:
-        query["$or"] = [{"name": {"$regex": q, "$options": "i"}}, {"roll_number": {"$regex": q, "$options": "i"}}]
+        # Escaped: raw user input reaching $regex allows regex injection and, in the
+        # in-memory fallback, catastrophic-backtracking patterns that stall the process.
+        pattern = re.escape(q.strip()[:64])
+        query["$or"] = [{"name": {"$regex": pattern, "$options": "i"}}, {"roll_number": {"$regex": pattern, "$options": "i"}}]
+    limit = max(1, min(int(limit or 200), 1000))
     items = await db.students.find(query, {"_id": 0}).limit(limit).to_list(limit)
     return {"items": items, "count": len(items)}
 
@@ -1504,7 +1705,7 @@ async def global_search(q: str = "", user=Depends(get_session_user)):
         return {"results": []}
     role = user.get("role")
     iid = user.get("institution_id")
-    rx = {"$regex": term, "$options": "i"}
+    rx = {"$regex": re.escape(term[:64]), "$options": "i"}
     results = []
 
     if role in {"super_admin", "institution_admin", "tpo", "faculty"}:
@@ -1578,6 +1779,10 @@ async def get_student(student_id: str, user=Depends(get_session_user)):
     if not s:
         raise HTTPException(404, "not found")
     if user["role"] not in ("super_admin",) and s["institution_id"] != user.get("institution_id"):
+        raise HTTPException(403, "forbidden")
+    # Tenant membership is not person-level access: this record carries applications,
+    # resumes and interview reports, so a student may only ever resolve their own.
+    if user["role"] == "student" and user.get("student_id") != student_id:
         raise HTTPException(403, "forbidden")
     enrolls = await db.enrollments.find({"student_id": student_id}, {"_id": 0}).to_list(20)
     apps = await db.applications.find({"student_id": student_id}, {"_id": 0}).to_list(20)
@@ -1757,7 +1962,7 @@ async def my_workspace(user=Depends(get_session_user)):
             },
         }
 
-    iid = user.get("institution_id") or "inst_kmit"
+    iid = _scope_institution(user)
     department = user.get("department") if role == "faculty" else None
     operating = await _institution_operating_data(iid, department=department)
     inst = operating["institution"]
@@ -2358,7 +2563,7 @@ async def readiness_students(
     limit: int = 200,
     user=Depends(require_roles("super_admin", "institution_admin", "tpo", "faculty")),
 ):
-    institution_id = user.get("institution_id") or "inst_kmit"
+    institution_id = _scope_institution(user)
     scoped_department = department
     if user["role"] == "faculty" and user.get("department"):
         scoped_department = user["department"]
@@ -3211,9 +3416,9 @@ async def interviews_history(user=Depends(get_session_user)):
 # ============== PLACEMENT INTELLIGENCE ==============
 @app.get("/api/placements/overview")
 async def placements_overview(user=Depends(get_session_user)):
-    iid = user.get("institution_id") or "inst_kmit"
+    iid = _scope_institution(user)
     if user["role"] == "super_admin":
-        iid = "inst_kmit"
+        iid = DEFAULT_INSTITUTION_ID
     years = await db.year_summaries.find({"institution_id": iid}, {"_id": 0}).sort("academic_year", -1).to_list(20)
     records = await db.placement_records.find({"institution_id": iid}, {"_id": 0}).to_list(500)
     placed = await db.students.count_documents({"institution_id": iid, "placement.placed": True})
@@ -3349,7 +3554,7 @@ async def list_cohorts(user=Depends(get_session_user)):
 
 @app.get("/api/training/completion")
 async def training_completion(user=Depends(get_session_user)):
-    iid = user.get("institution_id") or "inst_kmit"
+    iid = _scope_institution(user)
     pipeline = [{"$match": {"institution_id": iid}},
                 {"$group": {"_id": "$program_code",
                             "avg_completion": {"$avg": "$completion_pct"},
@@ -3418,9 +3623,9 @@ async def training_completion(user=Depends(get_session_user)):
 @app.get("/api/intelligence/modules")
 async def module_intelligence(user=Depends(require_roles("super_admin", "institution_admin", "tpo", "faculty"))):
     role = user.get("role")
-    iid = user.get("institution_id") or "inst_kmit"
+    iid = _scope_institution(user)
     if role == "super_admin":
-        iid = "inst_kmit"
+        iid = DEFAULT_INSTITUTION_ID
     scoped_department = user.get("department") if role == "faculty" and user.get("department") else None
     operating = await _institution_operating_data(
         iid,
@@ -3574,9 +3779,9 @@ def _funnel_action(stage: str, leakage: float) -> str:
 
 async def _analytics_engine_payload(user: dict, department: Optional[str] = None) -> dict:
     role = user.get("role")
-    iid = user.get("institution_id") or "inst_kmit"
+    iid = _scope_institution(user)
     if role == "super_admin":
-        iid = "inst_kmit"
+        iid = DEFAULT_INSTITUTION_ID
     scoped_department = user.get("department") if role == "faculty" and user.get("department") else department
 
     operating = await _institution_operating_data(
@@ -3780,7 +3985,7 @@ async def create_job(
     if user["role"] == "recruiter":
         recruiter_id = await _resolve_recruiter_id(user)
         body["recruiter_id"] = recruiter_id or "__none__"
-        body.setdefault("institutions", ["inst_kmit"])
+        body.setdefault("institutions", [DEFAULT_INSTITUTION_ID])
         recruiter = await db.recruiters.find_one({"recruiter_id": recruiter_id}, {"_id": 0}) if recruiter_id else None
         if recruiter and not body.get("company"):
             body["company"] = recruiter.get("name")
@@ -4189,7 +4394,7 @@ async def talent_pool(recruiter_id: str, min_cgpa: float = 6.5, user=Depends(req
 # ============== ANNOUNCEMENTS ==============
 @app.get("/api/announcements")
 async def list_announcements(user=Depends(get_session_user)):
-    iid = user.get("institution_id") or "inst_kmit"
+    iid = _scope_institution(user)
     items = await db.announcements.find({"institution_id": iid}, {"_id": 0}).sort("created_at", -1).limit(20).to_list(20)
     return {"items": items}
 
@@ -4201,7 +4406,7 @@ async def create_announcement(
     user=Depends(require_roles("tpo", "institution_admin", "faculty", "super_admin")),
 ):
     body["announcement_id"] = f"ann_{uuid.uuid4().hex[:10]}"
-    body["institution_id"] = user.get("institution_id") or "inst_kmit"
+    body["institution_id"] = _scope_institution(user)
     body["by_role"] = user["role"]
     body["created_at"] = datetime.now(timezone.utc).isoformat()
     await db.announcements.insert_one(body)
@@ -4224,10 +4429,11 @@ async def create_announcement(
 
 # ============== MOU ==============
 @app.get("/api/mou")
-async def get_mou(user=Depends(get_session_user)):
-    iid = user.get("institution_id") or "inst_kmit"
-    if user["role"] == "super_admin":
-        iid = "inst_kmit"
+async def get_mou(institution_id: Optional[str] = None, user=Depends(require_roles("super_admin", "tpo", "institution_admin"))):
+    # An MOU is a commercial contract between the platform and one college. Students and
+    # faculty must not be able to read it, and only the platform admin may ask for a
+    # tenant other than their own.
+    iid = _scope_institution(user, institution_id)
     mou = await db.mous.find_one({"institution_id": iid}, {"_id": 0})
     if not mou:
         raise HTTPException(404, "no MOU")
@@ -4246,18 +4452,20 @@ async def upload_mou(
     partnership_type: str = Form("CRT"),
     user=Depends(require_roles("super_admin", "tpo", "institution_admin")),
 ):
-    iid = user.get("institution_id") or "inst_kmit"
+    iid = _scope_institution(user)
     content = await file.read()
+    _validate_upload(file, content)
+    safe_name = _safe_filename(file.filename)
     size_kb = round(len(content) / 1024, 1)
     # Persist actual bytes in GridFS
     gridfs_id = await gridfs.upload_from_stream(
-        f"{iid}__{file.filename}",
+        f"{iid}__{safe_name}",
         content,
         metadata={"institution_id": iid, "uploader_user_id": user["user_id"],
                   "content_type": file.content_type, "uploaded_at": datetime.now(timezone.utc).isoformat()},
     )
     await db.mous.update_one({"institution_id": iid}, {"$set": {
-        "institution_id": iid, "document_name": file.filename,
+        "institution_id": iid, "document_name": safe_name,
         "document_size_kb": size_kb, "partnership_type": partnership_type,
         "expires_on": expires_on, "signed_on": datetime.now(timezone.utc).isoformat(),
         "status": "active",
@@ -4266,7 +4474,7 @@ async def upload_mou(
     }}, upsert=True)
     await notify(db, event="mou_uploaded", to_email=ADMIN_EMAIL,
                  subject=f"MOU uploaded — {iid}", title="MOU received",
-                 body_html=f"<p>{file.filename} ({size_kb} KB) uploaded.</p>",
+                 body_html=f"<p>{safe_name} ({size_kb} KB) uploaded.</p>",
                  telegram_text=f"📄 MOU · {iid}")
     await _audit_log(
         "mou.uploaded",
@@ -4274,17 +4482,15 @@ async def upload_mou(
         institution_id=iid,
         resource="mou",
         resource_id=str(gridfs_id),
-        metadata={"filename": file.filename, "size_kb": size_kb, "partnership_type": partnership_type},
+        metadata={"filename": safe_name, "size_kb": size_kb, "partnership_type": partnership_type},
         request=request,
     )
-    return {"ok": True, "document_name": file.filename, "size_kb": size_kb, "gridfs_id": str(gridfs_id)}
+    return {"ok": True, "document_name": safe_name, "size_kb": size_kb, "gridfs_id": str(gridfs_id)}
 
 
 @app.get("/api/mou/download")
-async def download_mou(user=Depends(get_session_user)):
-    iid = user.get("institution_id") or "inst_kmit"
-    if user["role"] == "super_admin":
-        iid = "inst_kmit"
+async def download_mou(institution_id: Optional[str] = None, user=Depends(require_roles("super_admin", "tpo", "institution_admin"))):
+    iid = _scope_institution(user, institution_id)
     mou = await db.mous.find_one({"institution_id": iid}, {"_id": 0})
     if not mou or not mou.get("gridfs_id"):
         raise HTTPException(404, "No file on record")
@@ -4300,8 +4506,8 @@ async def download_mou(user=Depends(get_session_user)):
 
     return StreamingResponse(
         gen(),
-        media_type=mou.get("content_type", "application/pdf"),
-        headers={"Content-Disposition": f"attachment; filename=\"{mou['document_name']}\""},
+        media_type=_download_media_type(mou.get("content_type")),
+        headers={"Content-Disposition": f'attachment; filename="{_safe_download_name(mou.get("document_name"))}"'},
     )
 
 
@@ -4370,6 +4576,38 @@ async def reject_user(user_id: str, request: Request, admin=Depends(require_role
         request=request,
     )
     return {"ok": True}
+
+
+@app.post("/api/admin/reset-pending-approval")
+async def reset_pending_approval(request: Request, admin=Depends(require_roles("super_admin"))):
+    """Restore the pending-approval demo state so the onboarding flow stays demonstrable.
+
+    This replaces the old unauthenticated /api/test/reset-pending route, which let any
+    anonymous visitor push a named institution back to "pending". It is admin-only and
+    refuses to run against a live tenant unless it is explicitly the demo record.
+    """
+    pending_inst = await db.institutions.find_one({"institution_id": "inst_vasavi_pending"}, {"_id": 0})
+    if not pending_inst:
+        await db.institutions.insert_one({
+            "institution_id": "inst_vasavi_pending",
+            "name": "Vasavi College of Engineering",
+            "short_name": "VCE",
+            "type": "Engineering",
+            "city": "Hyderabad", "state": "Telangana",
+            "affiliated_university": "Osmania University",
+            "departments": ["CSE", "ECE", "IT"],
+            "approved": False,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+    else:
+        await db.institutions.update_one({"institution_id": "inst_vasavi_pending"}, {"$set": {"approved": False}})
+    await db.users.update_one(
+        {"email": "tpo@vasavi.ac.in"},
+        {"$set": {"approved": False, "role": "tpo", "institution_id": "inst_vasavi_pending"}},
+    )
+    await _audit_log("admin.demo_approval_reset", user=admin,
+                     resource="institution", resource_id="inst_vasavi_pending", request=request)
+    return {"ok": True, "institution_id": "inst_vasavi_pending", "approved": False}
 
 
 @app.get("/api/admin/notifications")
@@ -4538,15 +4776,7 @@ async def reseed_demo(admin=Depends(require_roles("super_admin"))):
     await _ensure_resume_versions_for_students()
 
     # Setup demo users
-    demo_users = [
-        {"email": ADMIN_EMAIL, "name": "Platform Super Admin", "role": "super_admin", "institution_id": None, "department": None},
-        {"email": "institution@kmit.in", "name": "KMIT — Institution Admin", "role": "institution_admin", "institution_id": "inst_kmit"},
-        {"email": "tpo@kmit.in", "name": "Dr. Neil Gogte", "role": "tpo", "institution_id": "inst_kmit"},
-        {"email": "faculty@kmit.in", "name": "Prof. Lavanya Iyer", "role": "faculty", "institution_id": "inst_kmit", "department": "CSE"},
-        {"email": "student@kmit.in", "name": "Aarav Reddy", "role": "student", "institution_id": "inst_kmit", "department": "CSE"},
-        {"email": "recruiter@amazon.com", "name": "Priya Sharma (Amazon)", "role": "recruiter", "institution_id": None, "department": None},
-        {"email": "tpo@vasavi.ac.in", "name": "Dr. Suresh Kumar", "role": "tpo", "institution_id": "inst_vasavi_pending", "approved": False},
-    ]
+    demo_users = _demo_account_specs()
     for d in demo_users:
         exists = await db.users.count_documents({"email": d["email"]})
         if not exists:
@@ -4554,7 +4784,7 @@ async def reseed_demo(admin=Depends(require_roles("super_admin"))):
                 email=d["email"], name=d["name"], role=d["role"],
                 institution_id=d.get("institution_id"),
                 department=d.get("department"),
-                password=DEFAULT_DEMO_PASSWORD if d["role"] != "super_admin" else ADMIN_PASSWORD,
+                password=_seed_password_for(d["role"]),
                 approved=d.get("approved", True),
             )
             if d["role"] == "student":
@@ -4577,7 +4807,7 @@ async def list_cohort_students(program_code: str, user=Depends(get_session_user)
     iid = user.get("institution_id")
     if not iid:
         if user["role"] == "super_admin":
-            iid = "inst_kmit"
+            iid = DEFAULT_INSTITUTION_ID
         else:
             return {"items": []}
     
@@ -4751,7 +4981,7 @@ async def _institution_overview_for_reports(iid: str) -> dict:
 
 @app.get("/api/reports/placement.pdf")
 async def report_placement_pdf(request: Request, user=Depends(get_session_user)):
-    iid = user.get("institution_id") or "inst_kmit"
+    iid = _scope_institution(user)
     inst = await db.institutions.find_one({"institution_id": iid}, {"_id": 0}) or {}
     overview = await _institution_overview_for_reports(iid)
     pdf = placement_report_pdf(inst, overview)
@@ -4761,7 +4991,7 @@ async def report_placement_pdf(request: Request, user=Depends(get_session_user))
 
 @app.get("/api/reports/training.pdf")
 async def report_training_pdf(request: Request, user=Depends(get_session_user)):
-    iid = user.get("institution_id") or "inst_kmit"
+    iid = _scope_institution(user)
     inst = await db.institutions.find_one({"institution_id": iid}, {"_id": 0}) or {}
     pipeline = [{"$match": {"institution_id": iid}},
                 {"$group": {"_id": "$program_code",
@@ -4789,7 +5019,7 @@ async def report_training_pdf(request: Request, user=Depends(get_session_user)):
 
 @app.get("/api/reports/department.pdf")
 async def report_department_pdf(request: Request, user=Depends(get_session_user)):
-    iid = user.get("institution_id") or "inst_kmit"
+    iid = _scope_institution(user)
     inst = await db.institutions.find_one({"institution_id": iid}, {"_id": 0}) or {}
     overview = await _institution_overview_for_reports(iid)
     students = await db.students.find({"institution_id": iid}, {"_id": 0}).to_list(1000)
@@ -4800,9 +5030,9 @@ async def report_department_pdf(request: Request, user=Depends(get_session_user)
 
 @app.get("/api/reports/students.csv")
 async def report_students_csv(request: Request, department: Optional[str] = None, user=Depends(get_session_user)):
-    iid = user.get("institution_id") or "inst_kmit"
+    iid = _scope_institution(user)
     if user["role"] == "super_admin":
-        iid = "inst_kmit"
+        iid = DEFAULT_INSTITUTION_ID
     q = {"institution_id": iid}
     if department:
         q["department"] = department
@@ -4814,7 +5044,7 @@ async def report_students_csv(request: Request, department: Optional[str] = None
 
 @app.get("/api/reports/applications.csv")
 async def report_applications_csv(request: Request, user=Depends(get_session_user)):
-    iid = user.get("institution_id") or "inst_kmit"
+    iid = _scope_institution(user)
     items = await db.applications.find({"institution_id": iid}, {"_id": 0}).to_list(2000)
     buf = applications_csv(items)
     await _audit_log("report.csv_exported", user=user, institution_id=iid, resource="report", resource_id="applications_csv", metadata={"rows": len(items)}, request=request)
@@ -4823,7 +5053,7 @@ async def report_applications_csv(request: Request, user=Depends(get_session_use
 
 @app.get("/api/reports/placements.csv")
 async def report_placements_csv(request: Request, user=Depends(get_session_user)):
-    iid = user.get("institution_id") or "inst_kmit"
+    iid = _scope_institution(user)
     records = await db.placement_records.find({"institution_id": iid}, {"_id": 0}).to_list(2000)
     buf = placements_csv(records)
     await _audit_log("report.csv_exported", user=user, institution_id=iid, resource="report", resource_id="placements_csv", metadata={"rows": len(records)}, request=request)
@@ -5436,43 +5666,59 @@ async def invite_user(
     iid = body.institution_id if user["role"] == "super_admin" else user.get("institution_id")
     if not iid:
         raise HTTPException(400, "institution_id required")
-    existing = await db.users.find_one({"email": body.email.lower()})
-    if existing:
-        raise HTTPException(409, "User already exists")
-    pw = DEFAULT_DEMO_PASSWORD  # auto-set; user changes after first login (out of scope)
-    new = _new_user(email=body.email, name=body.name, role=body.role,
-                    institution_id=iid, password=pw, approved=True, department=body.department)
-    await db.users.insert_one(new)
+    email = body.email.lower().strip()
     inst = await db.institutions.find_one({"institution_id": iid}, {"_id": 0}) or {}
+    login_url = f"{_public_origin(request)}/login"
+
+    existing = await db.users.find_one({"email": email})
+    if existing:
+        # Re-inviting an account that already exists (for example one created by a
+        # pending self-registration) updates its scope instead of dead-ending the invite.
+        await db.users.update_one({"user_id": existing["user_id"]}, {"$set": {
+            "name": body.name or existing.get("name"),
+            "role": body.role,
+            "institution_id": iid,
+            "department": body.department,
+            "approved": True,
+        }})
+        user_id = existing["user_id"]
+    else:
+        # No password is set here. Sign-in is Google-only, so the invitation grants a
+        # role and the account activates the first time that email signs in with Google.
+        # A shared default password would be a credential anyone with the repo can use.
+        new = _new_user(email=email, name=body.name, role=body.role,
+                        institution_id=iid, password=None, approved=True, department=body.department)
+        await db.users.insert_one(new)
+        user_id = new["user_id"]
+
     await notify(
         db, event="user_invited",
-        to_email=body.email,
+        to_email=email,
         subject=f"Welcome to CareerOS — {inst.get('name', 'your institution')}",
         title="You've been invited to CareerOS",
         body_html=(f"<p>Hi {body.name},</p>"
                    f"<p>{user['name']} has invited you to <b>{inst.get('name')}</b>'s placement command center as a <b>{body.role.replace('_', ' ')}</b>.</p>"
-                   f"<p>Sign in at <a href='https://career-os-nexus.preview.emergentagent.com/login'>CareerOS</a> using:</p>"
-                   f"<p><b>Email:</b> {body.email}<br/><b>Temporary password:</b> {pw}</p>"
-                   f"<p>Please change your password after first login.</p>"),
-        telegram_text=f"👥 New invite · {body.email} → {inst.get('short_name', iid)} · {body.role}",
+                   f"<p>Sign in with Google at <a href='{login_url}'>CareerOS</a> using <b>{email}</b>. "
+                   f"Your role and access are applied automatically on first sign-in.</p>"),
+        telegram_text=f"👥 New invite · {email} → {inst.get('short_name', iid)} · {body.role}",
     )
     await _audit_log(
         "user.invited",
         user=user,
         institution_id=iid,
         resource="user",
-        resource_id=new["user_id"],
-        metadata={"target_email": body.email.lower(), "target_role": body.role, "department": body.department},
+        resource_id=user_id,
+        metadata={"target_email": email, "target_role": body.role, "department": body.department},
         request=request,
     )
-    return {"user_id": new["user_id"], "email": body.email, "temp_password": pw}
+    return {"user_id": user_id, "email": email, "status": "invited"}
 
 
 @app.get("/api/institution/users")
 async def list_institution_users(user=Depends(require_roles("tpo", "institution_admin", "super_admin"))):
     iid = user.get("institution_id")
     if user["role"] == "super_admin":
-        iid = iid or "inst_kmit"
+        iid = iid or DEFAULT_INSTITUTION_ID
     items = await db.users.find({"institution_id": iid}, {"_id": 0, "password_hash": 0}).to_list(200)
     return {"items": items}
 
@@ -5710,7 +5956,7 @@ async def post_student_prediction(body: dict, user=Depends(require_roles("super_
 
 @app.get("/api/fdp/sessions")
 async def list_fdp_sessions(user=Depends(require_roles("super_admin", "institution_admin", "tpo", "faculty"))):
-    iid = user.get("institution_id") or "inst_kmit"
+    iid = _scope_institution(user)
     query = {} if user["role"] == "super_admin" else {"institution_id": iid}
     return {"items": await db.fdp_sessions.find(query, {"_id": 0}).sort("date", -1).limit(200).to_list(200)}
 
@@ -5951,7 +6197,7 @@ async def generate_report_run(body: dict, request: Request, user=Depends(require
     else:
         report = (await create_report_run(body, request, user))["item"]
         report_id = report["report_id"]
-    iid = report.get("institution_id") or user.get("institution_id") or "inst_kmit"
+    iid = report.get("institution_id") or user.get("institution_id") or DEFAULT_INSTITUTION_ID
     overview = await _institution_overview_for_reports(iid)
     generated = {
         "status": "generated",
@@ -6039,7 +6285,9 @@ async def google_oauth_callback(request: Request):
 
     state = request.query_params.get("state")
     cookie_state = request.cookies.get("oauth_state")
-    if cookie_state and state != cookie_state:
+    # Fail closed. The previous check only compared states when the cookie existed,
+    # so a blocked or expired cookie removed CSRF protection entirely.
+    if not state or not cookie_state or not secrets.compare_digest(str(state), str(cookie_state)):
         raise HTTPException(400, "Invalid Google OAuth state")
 
     redirect_uri = _google_redirect_uri(request)
@@ -6120,19 +6368,26 @@ async def google_oauth_callback(request: Request):
 async def forgot_password(body: ForgotPasswordBody, request: Request):
     email = body.email.lower().strip()
     user = await db.users.find_one({"email": email})
+    # Identical response whether or not the account exists: a 404 here confirms
+    # which emails are registered and turns the form into an account enumerator.
     if not user:
-        raise HTTPException(404, "User not found")
-    
-    token = str(uuid.uuid4())
+        return {"success": True}
+
+    raw_token = secrets.token_urlsafe(32)
     expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
-    
+
+    # Store only the digest, so a database read does not hand out usable reset links.
     await db.password_reset_tokens.update_one(
         {"email": email},
-        {"$set": {"token": token, "expires_at": expires_at}},
-        upsert=True
+        {"$set": {
+            "token_hash": _hash_reset_token(raw_token),
+            "expires_at": expires_at,
+            "requested_at": datetime.now(timezone.utc).isoformat(),
+        }},
+        upsert=True,
     )
-    
-    reset_url = f"{_public_origin(request)}/reset-password?token={token}"
+
+    reset_url = f"{_public_origin(request)}/reset-password?token={raw_token}"
     await notify(
         db,
         event="auth.password_reset",
@@ -6141,32 +6396,40 @@ async def forgot_password(body: ForgotPasswordBody, request: Request):
         title="Password Reset Request",
         body_html=f"Please reset your password using <a href='{reset_url}'>this link</a>."
     )
-    
+
     return {"success": True}
 
 
 @app.post("/api/auth/reset-password")
 async def reset_password(body: ResetPasswordBody, request: Request):
-    tok_doc = await db.password_reset_tokens.find_one({"token": body.token})
+    tok_doc = await db.password_reset_tokens.find_one({"token_hash": _hash_reset_token(body.token)})
     if not tok_doc:
         raise HTTPException(400, "Invalid or expired token")
-        
+
     expires_at = tok_doc["expires_at"]
     if isinstance(expires_at, str):
         expires_at = datetime.fromisoformat(expires_at)
     if expires_at.tzinfo is None:
         expires_at = expires_at.replace(tzinfo=timezone.utc)
-        
+
     if expires_at < datetime.now(timezone.utc):
-        await db.password_reset_tokens.delete_one({"token": body.token})
+        await db.password_reset_tokens.delete_many({"email": tok_doc["email"]})
         raise HTTPException(400, "Token expired")
-        
+
+    if len(body.new_password or "") < MIN_PASSWORD_LENGTH:
+        raise HTTPException(422, f"Password must be at least {MIN_PASSWORD_LENGTH} characters")
+
     email = tok_doc["email"]
-    password_hash = hash_password(body.new_password)
-    
-    await db.users.update_one({"email": email}, {"$set": {"password_hash": password_hash}})
-    await db.password_reset_tokens.delete_one({"token": body.token})
-    
+    user = await db.users.find_one({"email": email})
+    if not user:
+        await db.password_reset_tokens.delete_many({"email": email})
+        raise HTTPException(400, "Invalid or expired token")
+
+    await db.users.update_one({"email": email}, {"$set": {"password_hash": hash_password(body.new_password)}})
+    await db.password_reset_tokens.delete_many({"email": email})
+    # A password change must invalidate sessions that were issued before it.
+    await db.user_sessions.delete_many({"user_id": user["user_id"]})
+
     await _audit_log("auth.password_reset_complete", metadata={"email": email}, request=request)
     return {"success": True}
 
@@ -6188,7 +6451,7 @@ async def auth_refresh(request: Request, response: Response):
             JWT_SECRET,
             algorithms=[JWT_ALGORITHM],
             issuer=JWT_ISSUER,
-            options={"require": ["exp", "iat", "sub", "jti"], "verify_exp": False}
+            options={"require": ["exp", "iat", "sub", "jti"]}
         )
     except jwt.InvalidTokenError as exc:
         raise HTTPException(401, "Invalid session") from exc
@@ -6244,7 +6507,13 @@ async def auth_register(payload: RegisterBody, request: Request, response: Respo
     email = payload.email.lower().strip()
     existing = await db.users.find_one({"email": email})
     if existing:
-        raise HTTPException(400, "Email already registered")
+        # Same answer as a new registration: this form is public, so a distinct
+        # error would let anyone test whether a given person has an account.
+        await _audit_log("auth.register_duplicate", metadata={"email": email}, request=request)
+        return {
+            "status": "pending_approval",
+            "message": "Registration successful. Pending admin approval. Sign in with Google using this email once approved.",
+        }
 
     if not payload.college_name:
         raise HTTPException(400, "College name is required for institution registration")
@@ -6335,7 +6604,7 @@ async def create_comm_log(payload: CommLogBody, request: Request, user=Depends(g
     
     inst_id = user.get("institution_id")
     if user["role"] == "super_admin":
-        inst_id = inst_id or "inst_kmit"
+        inst_id = inst_id or DEFAULT_INSTITUTION_ID
         
     log_doc = {
         "log_id": f"log_{uuid.uuid4().hex[:10]}",
@@ -6419,7 +6688,7 @@ class ChatMessageBody(BaseModel):
 
 def _partner_scope(user: dict, explicit_institution_id: Optional[str] = None) -> str:
     if user.get("role") == "super_admin":
-        return explicit_institution_id or user.get("institution_id") or "inst_kmit"
+        return explicit_institution_id or user.get("institution_id") or DEFAULT_INSTITUTION_ID
     iid = user.get("institution_id")
     if explicit_institution_id and explicit_institution_id != iid:
         raise HTTPException(403, "Cross-institution access denied")
@@ -6615,7 +6884,9 @@ async def create_chat_message(payload: ChatMessageBody, request: Request, user=D
 
 # ============== REVENUE ==============
 class RevenueShareBody(BaseModel):
-    institution_id: str
+    # Optional and ignored for non-admin callers: the owning institution is always
+    # taken from the authenticated session so one college cannot post into another's ledger.
+    institution_id: Optional[str] = None
     amount_inr: float
     period: str
     type: str
@@ -6628,7 +6899,7 @@ async def get_my_revenue(user=Depends(get_session_user)):
         
     inst_id = user.get("institution_id")
     if not inst_id and user["role"] == "super_admin":
-        inst_id = "inst_kmit"
+        inst_id = DEFAULT_INSTITUTION_ID
         
     records = await db.revenue_share.find({"institution_id": inst_id}).sort("date", -1).to_list(100)
     for r in records:
@@ -6657,13 +6928,25 @@ async def get_my_revenue(user=Depends(get_session_user)):
 
 @app.post("/api/revenue/share")
 async def create_revenue_share(payload: RevenueShareBody, request: Request, user=Depends(get_session_user)):
-    if user["role"] not in ("institution_admin", "super_admin"):
+    # TPO is allowed here as well, because the same page is mounted under /tpo/revenue
+    # and reads are permitted for that role; previously the write returned 403 for TPOs.
+    if user["role"] not in ("tpo", "institution_admin", "super_admin"):
         raise HTTPException(403, "Forbidden")
-        
+
+    # Only the platform admin may name a tenant; everyone else is pinned to their
+    # own, so a stale or forged institution_id cannot land in another college ledger.
+    requested = payload.institution_id if user["role"] == "super_admin" else None
+    iid = _scope_institution(user, requested)
+    amount = float(payload.amount_inr or 0)
+    if amount <= 0:
+        raise HTTPException(422, "amount_inr must be greater than zero")
+    if amount > 10_000_000_000:
+        raise HTTPException(422, "amount_inr is implausibly large")
+
     doc = {
         "revenue_id": f"rev_{uuid.uuid4().hex[:10]}",
-        "institution_id": payload.institution_id,
-        "amount_inr": payload.amount_inr,
+        "institution_id": iid,
+        "amount_inr": amount,
         "period": payload.period,
         "type": payload.type,
         "date": datetime.now(timezone.utc).isoformat()
@@ -6937,8 +7220,11 @@ async def build_student_resume(payload: ResumeBuildBody, request: Request, user=
 
 @app.get("/api/me/resume/download/{token}.pdf")
 async def download_built_resume(token: str, user=Depends(get_session_user)):
+    # The token is the only secret in the URL, so ownership must be checked for every
+    # role, not just students; otherwise a leaked token from one tenant is readable
+    # by any authenticated user on the platform.
     query = {"download_token": token}
-    if user.get("role") == "student":
+    if user.get("role") != "super_admin":
         query["user_id"] = user["user_id"]
     doc = await db.resume_versions.find_one(query, {"_id": 0})
     if not doc:
