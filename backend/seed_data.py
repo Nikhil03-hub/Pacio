@@ -8,7 +8,7 @@ import random
 import uuid
 from datetime import datetime, timezone, timedelta
 
-from dsa_catalog import DSA_TOTAL, STRIVER_TOPICS, build_dsa_question_bank, question_bank_by_topic
+from dsa_catalog import DSA_TOTAL, DSA_TOPICS, build_dsa_question_bank, question_bank_by_topic
 
 APTITUDE_SECTIONS = [
     {"code": "QUANT", "name": "Quantitative Aptitude", "topics": ["Numbers", "Percentages", "Profit & Loss", "Time-Speed-Distance", "Time & Work", "Ratios", "Permutations & Combinations", "Probability"]},
@@ -999,7 +999,7 @@ def seed_payload() -> dict:
     for s in eng_students:
         # Higher CGPA â†’ higher solve rate
         skill_factor = (s["cgpa"] - 6.0) / 4.0  # 0.1 â†’ 0.95
-        for t in STRIVER_TOPICS:
+        for t in DSA_TOPICS:
             solved = max(0, int(t["problems"] * (skill_factor + random.uniform(-0.18, 0.18))))
             solved = min(t["problems"], solved)
             attempted = min(t["problems"], solved + random.randint(0, 4))

@@ -20,9 +20,11 @@ MongoDB 8.2.1 on `127.0.0.1:27017`, no third-party API credentials.
 | Total | 32 + 20 + 3 + 73 | **128 passed** |
 | Multi-tenant role matrix (Tenant A vs synthetic Tenant B) | `pytest backend/tests/test_tenant_isolation.py -q` | **20 passed**, ~102 s |
 | Real-MongoDB integration | `PACIO_TEST_MONGO_URL=mongodb://127.0.0.1:27017 pytest backend/tests/test_mongo_integration.py -q` | **3 passed**, ~18 s |
-| Legacy feature suites | Mongo-backed server with `RATE_LIMIT_ENABLED=false`, then `DEFAULT_DEMO_PASSWORD=… REACT_APP_BACKEND_URL=… pytest backend/tests/test_careeros_v2.py backend/tests/test_careeros_v21.py -q` | **73 passed**, ~5 m 44 s |
+| Legacy feature suites | Mongo-backed server with `RATE_LIMIT_ENABLED=false`, then `DEFAULT_DEMO_PASSWORD=… REACT_APP_BACKEND_URL=… pytest backend/tests/test_careeros_v2.py backend/tests/test_careeros_v21.py -q` | **72 passed / 1 failed** on the run after the curriculum change; the failure was a stale title assertion (`Kadane's Algorithm`, `Rotate Matrix` are no longer in the catalogue), corrected, and that test passes in isolation. Earlier full run on the previous catalogue: 73/73. |
 | Frontend production build | `cd frontend && REACT_APP_BACKEND_URL= CI=false npm run build` | compiled; 884 kB gzipped JS |
-| Certificate verification page | served build, `/verify/ST-CRT-TEST0001` | renders VALID with holder/program/institution; screenshot captured |
+| Certificate verification page | served build, `/verify/ST-CRT-RC2026` | renders VALID with holder/program/institution; screenshot captured |
+| Login page (served build) | `http://127.0.0.1:8073/login` | renders; no stray markup in the top-left corner; screenshot captured |
+| No local backend URL in the bundle | grep of `build/static/js/main.*.js` | 0 occurrences of `localhost` or `127.0.0.1` |
 | Stray `"/>` in the old certificate screenshot | source + build + commit check | **not present**: source clean, built HTML clean, fix shipped in commit `58d6dc5`. The screenshot was taken before that commit, from an earlier build. |
 
 Covered by the two new suites specifically: tenant scoping on rosters, peer records,
@@ -30,6 +32,15 @@ resumes, MOUs, payouts, analytics, exports and comm logs; students blocked from 
 exports; pending accounts blocked from all data routes while still able to read their own
 identity and submit onboarding; super-admin global access; session revocation; rate
 limiting (429 + `Retry-After`); fail-closed production startup.
+
+### Release-candidate checks added in this pass
+
+- Backup and restore drill: see [DATABASE_RECOVERY.md](DATABASE_RECOVERY.md) (VERIFIED).
+- Credential posture and provider steps: see [CREDENTIAL_REMEDIATION.md](CREDENTIAL_REMEDIATION.md).
+- DSA catalogue replaced with an original curriculum; orphan progress rows fixed; **0** orphans remain.
+- Jooble now returns an empty feed with a warning when unconfigured (no fabricated listings).
+- Full diff review: no dependency or database-target changes, deletions intentional, no secrets
+  in the current tree, backup directory git-ignored.
 
 ## 2. Verified against a real MongoDB (local instance, fresh database)
 
@@ -39,9 +50,13 @@ database was dropped after use.
 | Check | Result |
 | --- | --- |
 | Startup connects to Mongo | log: "MONGO_URL configured"; `/api/health` 200 |
-| Full seed (after fixing the Mongo-path gaps) | 57 institutions, 5,450 students, 1,565 jobs, 979 applications, 474 DSA questions, 340,931 DSA progress rows, 282 aptitude questions, 4,920 aptitude scores, 858 placement records, 56 MOUs, 165 revenue records |
+| Full seed (after fixing the Mongo-path gaps) | 57 institutions, 5,450 students, 1,565 jobs, 979 applications, **108 DSA questions over 12 topics**, 61,200 topic-progress rows, 345,795 question-progress rows, 282 aptitude questions, 4,920 aptitude scores, 858 placement records, 56 MOUs, 165 revenue records |
 | Index creation on Mongo | unique `users.email`, unique `user_sessions.jwt_id`, TTL `password_reset_tokens.expires_at`, unique `rate_limits.key`, unique `certificates.cert_id`, plus roster/query indexes |
 | Health backfill | 57/57 institutions have a computed `health_score` |
+| Backup / restore drill | `scripts/mongo_backup_restore.py`: 41 collections / 597,821 documents backed up (16.4 MB); restored into a separate database; every collection count matched; the API ran against the restored database (login + roster + indexes verified); the disposable database was dropped |
+| Restart duplication | Counts identical before and after restart (no repeated seeding) |
+| DSA migration integrity | Orphan progress rows: **0**; demo student has 27 attempted / 9 solved after the rebuild |
+| Jooble without a key | Returns `source: "unconfigured"`, `jobs: []`, warning — no invented listings |
 | Persistence across a real process restart | session token still valid (200), certificate still verifies, jobs endpoint 200 |
 | Logout revocation | same token after logout → 401 |
 | Rate limiting across instances | 10×401 then 429 with `Retry-After`; counters stored in Mongo (`rate_limits`) |
@@ -49,7 +64,7 @@ database was dropped after use.
 
 ### Defects this revealed (now fixed)
 1. The Mongo startup path seeded only six collections. **Jobs were empty and the entire DSA
-   catalog (474 questions, 340k progress rows) was missing**, which silently broke the jobs
+   catalog (474 questions / 340k progress rows at the time; now the 108-problem original curriculum) was missing**, which silently broke the jobs
    board and 30% of the readiness score on any real deployment while the in-memory demo
    looked complete.
 2. Aptitude progress and resume versions were backfilled only on the in-memory path, so ATS
@@ -92,7 +107,7 @@ determined from this machine. Treat these as owner checks:
 | Blocker | Status |
 | --- | --- |
 | Exposed credentials in public git history | **OPEN** — rotate at providers; decide history rewrite vs private repo |
-| DSA curriculum rights | **OPEN** — written permission or replacement required; attribution removal does not grant a right |
+| DSA curriculum rights | **RESOLVED (2026-10-23)** — the third-party sheet was replaced with an original 12-topic / 108-problem pattern curriculum written for this product; coverage sources are cited, no third-party content is reproduced |
 | Brand collision (`careeros.com`) | **OPEN** — owner naming decision |
 | Seeded data names real colleges with invented partnerships/payouts | **OPEN** — fictionalise or obtain permission |
 | No customer, pilot, LOI, tender or willingness-to-pay evidence | **OPEN** — the only sourced price in the category is one competitor's list price (₹25k–55k/month) |

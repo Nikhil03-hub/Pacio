@@ -59,7 +59,7 @@ cd Pacio-Merged
 | Hardening | `pytest backend/tests/test_hardening.py -q` | **32 passed** in ~93 s; in-process `TestClient`, no server, always uses the in-memory store |
 | Multi-tenant matrix | `pytest backend/tests/test_tenant_isolation.py -q` | **20 passed** in ~102 s; builds synthetic Tenant B with every role and proves cross-tenant boundaries |
 | Real MongoDB | `PACIO_TEST_MONGO_URL=mongodb://127.0.0.1:27017 pytest backend/tests/test_mongo_integration.py -q` | **3 passed** in ~18 s; creates a uniquely named database, verifies indexes and writes, drops it afterwards |
-| Legacy v2 + v21 | start the server with `MONGO_URL= RATE_LIMIT_ENABLED=false`, then `REACT_APP_BACKEND_URL=http://127.0.0.1:<port> pytest backend/tests/test_careeros_v2.py backend/tests/test_careeros_v21.py -q` | 73 tests; ~6 min; needs a running server and reaches external services. Disable the limiter because those tests log in repeatedly with the same accounts. |
+| Legacy v2 + v21 | start the server with `RATE_LIMIT_ENABLED=false` (Mongo or memory), then `DEFAULT_DEMO_PASSWORD=… REACT_APP_BACKEND_URL=http://127.0.0.1:<port> pytest backend/tests/test_careeros_v2.py backend/tests/test_careeros_v21.py -q` | 73 tests; 5-16 min depending on load; needs a running server. Disable the limiter because the tests log in repeatedly with the same accounts. On a memory-backed server the analytics endpoints are pathologically slow (see BL-31). |
 | Frontend build | `cd frontend && REACT_APP_BACKEND_URL= CI=false npm run build` | **Compiled successfully**; 884 kB gzipped JS (BL-20) |
 
 Total: **128 automated tests** (32 + 20 + 3 + 73) on 2026-10-23.
@@ -71,7 +71,7 @@ the separate, explicitly opt-in integration suite.
 ### Real-MongoDB verification performed (local MongoDB 8.2.1, database dropped afterwards)
 
 Full seed on a fresh database: 57 institutions, 5,450 students, 1,565 jobs, 979
-applications, 474 DSA questions, 340,931 DSA progress rows, 282 aptitude questions, 4,920
+applications, 108 DSA questions over 12 topics, 61,200 topic-progress rows, 345,795 question-progress rows, 282 aptitude questions, 4,920
 aptitude scores, 858 placement records, 56 MOUs, 165 revenue records, health scores on all
 57 institutions. Unique/TTL indexes confirmed. A session and an issued certificate survived
 a real process restart; logout then returned 401; the limiter returned 429 with
@@ -79,6 +79,18 @@ a real process restart; logout then returned 401; the limiter returned 429 with
 `RuntimeError: MONGO_URL is not configured but APP_ENV=production…`.
 
 There is no CI yet (BL-18) and no browser test (BL-19).
+
+## 4b. Database maintenance scripts
+
+| Script | Purpose |
+| --- | --- |
+| `scripts/mongo_backup_restore.py backup/restore/verify` | Portable backup, restore into a separate database, per-collection verification (no mongodump required) |
+| `scripts/migrate_dsa_curriculum.py` | Back up and drop the DSA collections so startup reseeds the current catalogue (demo databases only) |
+| `scripts/rebuild_dsa_progress.py` | Rebuild per-student DSA progress from **existing** students after a catalogue change; removes orphan rows |
+
+All three refuse a database whose name does not start with `pacio_` unless `--force-any`
+is passed, and require `--yes` before deleting anything. Details and measured results:
+[docs/DATABASE_RECOVERY.md](DATABASE_RECOVERY.md).
 
 ## 5. Database
 

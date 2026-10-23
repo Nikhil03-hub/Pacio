@@ -1,3 +1,9 @@
+> **Historical document (June 2026).** This is the original hackathon build record.
+> Several details have since changed — most notably the DSA catalogue was replaced with
+> an original 12-topic / 108-problem curriculum, and the demo-credential and security
+> findings were remediated. For current state see `README.md`, `docs/RELEASE_READINESS.md`
+> and `docs/PACIO_HANDOFF.md`.
+
 # FINAL PROJECT DOCUMENTATION
 ## CareerOS: Campus Placement Intelligence Platform (Track 5B)
 

@@ -32,7 +32,7 @@ from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorGridFSBucket
 from pydantic import BaseModel, EmailStr
 
 from seed_data import (
-    seed_payload, STRIVER_TOPICS, DSA_TOTAL, APTITUDE_SECTIONS, INSTITUTIONS,
+    seed_payload, DSA_TOPICS, DSA_TOTAL, APTITUDE_SECTIONS, INSTITUTIONS,
     PROGRAMS, KMIT_PLACEMENT_RECORDS, YEAR_AGGREGATES, build_dsa_question_bank,
 )
 from notification_service import notify
@@ -113,7 +113,7 @@ CORE_COLLECTIONS = [
 app = FastAPI(title="CareerOS")
 FRONTEND_BUILD = ROOT.parent / "frontend" / "build"
 SPA_HEADERS = {"Cache-Control": "no-store, max-age=0"}
-DSA_TOPIC_BY_CODE = {topic["code"]: topic for topic in STRIVER_TOPICS}
+DSA_TOPIC_BY_CODE = {topic["code"]: topic for topic in DSA_TOPICS}
 DSA_TOPIC_CODES = list(DSA_TOPIC_BY_CODE.keys())
 APTITUDE_PREP_SECTIONS = [
     {"code": "QUANT", "name": "Quantitative Aptitude", "topics": [
@@ -1070,7 +1070,7 @@ async def _ensure_student_dsa_catalog(student: dict) -> None:
         legacy_by_topic = {row["topic_code"]: row for row in legacy_rows}
         inserts = []
         now = datetime.now(timezone.utc).isoformat()
-        for topic in STRIVER_TOPICS:
+        for topic in DSA_TOPICS:
             questions = await db.dsa_questions.find({"topic_code": topic["code"]}, {"_id": 0}).sort("order", 1).to_list(600)
             legacy = legacy_by_topic.get(topic["code"], {})
             old_total = max(1, int(legacy.get("total") or topic["problems"]))
@@ -1101,7 +1101,7 @@ async def _ensure_student_dsa_catalog(student: dict) -> None:
         if inserts:
             await db.dsa_question_progress.insert_many(inserts)
 
-    for topic in STRIVER_TOPICS:
+    for topic in DSA_TOPICS:
         await _sync_topic_progress_from_questions(student, topic["code"])
 
 
@@ -1115,7 +1115,7 @@ async def _student_dsa_question_payload(student: dict) -> dict:
     progress_by_question = {row["question_id"]: row for row in progress_rows}
     topic_groups = []
     merged_all = []
-    for topic in STRIVER_TOPICS:
+    for topic in DSA_TOPICS:
         topic_questions = []
         for question in [q for q in questions if q["topic_code"] == topic["code"]]:
             progress = progress_by_question.get(question["question_id"], {})
@@ -1295,6 +1295,17 @@ async def _ensure_production_minimums():
         # real MongoDB deployment, which silently broke the jobs board and 30% of the
         # readiness score while the in-memory demo looked complete.
         #
+        # seed_payload() invents new student/job IDs on every call. Inserting its dependent
+        # collections into a database that already has students creates orphan rows whose
+        # student_id does not exist (this is exactly how the demo student lost its DSA
+        # progress during migration). Derived collections are therefore only inserted into
+        # a genuinely fresh database; existing deployments repair them from live records.
+        fresh_database = await db.students.count_documents({}) == 0
+        derived_from_students = {
+            "students", "applications", "placements", "enrollments", "dsa_progress",
+            "dsa_question_progress", "aptitude_scores", "ats_reports", "interview_reports",
+        }
+        #
         # seed_payload() builds ~340k rows in memory. It must only run on a genuinely
         # empty deployment: doing it on every cold start added minutes of startup latency
         # before the first request could be served.
@@ -1307,7 +1318,11 @@ async def _ensure_production_minimums():
                 break
         payload = seed_payload() if needs_seed else {}
         for col, items in payload.items():
-            if items and await db[col].count_documents({}) == 0:
+            if not items:
+                continue
+            if col in derived_from_students and not fresh_database:
+                continue
+            if await db[col].count_documents({}) == 0:
                 await db[col].insert_many(items)
         if needs_seed and await db.dsa_questions.count_documents({}) == 0:
             await db.dsa_questions.insert_many(build_dsa_question_bank())
@@ -2007,7 +2022,7 @@ async def my_dashboard(user=Depends(require_roles("student"))):
         "ats": ats[0] if ats else None, "interviews": interviews,
         "applications": apps, "recommended_jobs": recs,
         "readiness_engine": readiness,
-        "topics": STRIVER_TOPICS, "aptitude_sections": APTITUDE_SECTIONS,
+        "topics": DSA_TOPICS, "aptitude_sections": APTITUDE_SECTIONS,
         "dsa_total": DSA_TOTAL,
     }
 
@@ -2042,7 +2057,7 @@ async def my_workspace(user=Depends(get_session_user)):
             "scope": {"institution_id": student.get("institution_id"), "student_id": sid, "department": student.get("department")},
             "kpis": [
                 _workspace_kpi("Readiness", readiness["score"], unit="/100", sub=readiness["label"], status=readiness["band"], to="/student"),
-                _workspace_kpi("DSA solved", dsa_signal.get("solved", 0), sub=f"of {dsa_signal.get('total', DSA_TOTAL)} A2Z questions", to="/student/dsa"),
+                _workspace_kpi("DSA solved", dsa_signal.get("solved", 0), sub=f"of {dsa_signal.get('total', DSA_TOTAL)} curriculum questions", to="/student/dsa"),
                 _workspace_kpi("ATS score", ats_signal.get("score", 0), unit="/100", sub=ats_signal.get("source", "profile"), to="/student/applications"),
                 _workspace_kpi("Active applications", len(active_apps), sub=f"{len(apps)} total tracked", to="/student/applications"),
             ],
@@ -2172,7 +2187,7 @@ async def my_workspace(user=Depends(get_session_user)):
             "kpis": [
                 _workspace_kpi("Batch size", readiness.get("count", 0), sub=department or "department", to="/faculty/roster"),
                 _workspace_kpi("Readiness avg", readiness.get("avg_readiness", 0), unit="/100", sub=f"{readiness.get('needs_intervention', 0)} need intervention", to="/faculty/roster"),
-                _workspace_kpi("DSA avg", component_avgs.get("dsa", 0), unit="/100", sub="question-level A2Z progress", to="/faculty/dsa"),
+                _workspace_kpi("DSA avg", component_avgs.get("dsa", 0), unit="/100", sub="question-level curriculum progress", to="/faculty/dsa"),
                 _workspace_kpi("Aptitude avg", component_avgs.get("aptitude", 0), unit="/100", sub=f"training avg {operating['training_avg']}%", to="/faculty/aptitude"),
             ],
             "actions": [
@@ -2248,13 +2263,13 @@ async def my_workspace(user=Depends(get_session_user)):
 # ============== DSA INTELLIGENCE ==============
 @app.get("/api/dsa/topics")
 async def dsa_topics():
-    return {"topics": STRIVER_TOPICS, "total": DSA_TOTAL}
+    return {"topics": DSA_TOPICS, "total": DSA_TOTAL}
 
 
 @app.get("/api/dsa/questions")
 async def dsa_questions(user=Depends(get_session_user)):
     questions = await db.dsa_questions.find({}, {"_id": 0}).sort("global_order", 1).to_list(DSA_TOTAL)
-    return {"questions": questions, "topics": STRIVER_TOPICS, "total": DSA_TOTAL}
+    return {"questions": questions, "topics": DSA_TOPICS, "total": DSA_TOTAL}
 
 
 @app.get("/api/me/dsa/questions")
@@ -2707,7 +2722,7 @@ async def my_ai_analysis(user=Depends(require_roles("student"))):
     for row in weakest_components:
         key = row["key"]
         if key == "dsa":
-            actions.append("Solve two medium A2Z problems daily from your weakest DSA topics.")
+            actions.append("Solve two medium curriculum problems daily from your weakest DSA topics.")
         elif key == "aptitude":
             actions.append("Take one timed aptitude sectional test and review every wrong answer.")
         elif key == "ats":
@@ -3869,7 +3884,7 @@ async def module_intelligence(user=Depends(require_roles("super_admin", "institu
             "code": "dsa",
             "score": dsa_score,
             "health": _health(dsa_score),
-            "primary": f"{DSA_TOTAL} A2Z questions",
+            "primary": f"{DSA_TOTAL} curated interview questions",
             "risk": f"{dsa_leaders} leaders tracked",
             "action": _module_action("dsa", dsa_score),
             "to": "/faculty/dsa" if user.get("role") == "faculty" else "/tpo/dsa",
@@ -4923,8 +4938,18 @@ async def reseed_demo(admin=Depends(require_roles("super_admin"))):
 
     now = datetime.now(timezone.utc)
     payload = seed_payload()
+    # Same ID-mismatch hazard as startup: skip payload rows that reference freshly invented
+    # students when real students already exist. Admin reseed restores static demo data
+    # only; student-derived progress is rebuilt by scripts/rebuild_dsa_progress.py.
+    fresh_database = await db.students.count_documents({}) == 0
+    derived_from_students = {
+        "students", "applications", "placements", "enrollments", "dsa_progress",
+        "dsa_question_progress", "aptitude_scores", "ats_reports", "interview_reports",
+    }
     for col, items in payload.items():
         if not items:
+            continue
+        if col in derived_from_students and not fresh_database:
             continue
         unique_key = UNIQUE_KEYS.get(col)
         if not unique_key:
@@ -7528,46 +7553,18 @@ async def fetch_jooble_jobs(keywords: str = "developer", location: str = "India"
     def clean_html(value: str, fallback: str = "") -> str:
         return re.sub(r"<[^>]+>", " ", value or fallback).strip()
 
-    def fallback_jobs() -> list[dict]:
-        city = location if location and location.lower() != "india" else "Hyderabad"
-        companies = [
-            ("Google", "Software Engineering Intern", "https://www.svgrepo.com/show/475656/google-color.svg"),
-            ("Microsoft", "Associate Software Engineer", "https://www.svgrepo.com/show/452062/microsoft.svg"),
-            ("Amazon", "SDE I", "https://www.svgrepo.com/show/475634/amazon-color.svg"),
-            ("Adobe", "Frontend Engineer", "https://www.svgrepo.com/show/452148/adobe.svg"),
-            ("Oracle", "Backend Developer", "https://www.svgrepo.com/show/303229/oracle-6-logo.svg"),
-            ("Deloitte", "Analyst Trainee", "https://www.svgrepo.com/show/331339/deloitte.svg"),
-        ]
-        normalized = []
-        for idx, (company, title, logo) in enumerate(companies):
-            normalized.append({
-                "id": f"fallback-{city.lower()}-{idx}",
-                "title": title if keywords.lower() in {"developer", "software", "react", "python"} else f"{keywords.title()} {title}",
-                "company": company,
-                "location": city,
-                "salary": f"{8 + idx * 3}-{14 + idx * 4} LPA",
-                "jobType": "Full-time",
-                "type": "Full-time",
-                "applyLink": "https://www.linkedin.com/jobs/",
-                "link": "https://www.linkedin.com/jobs/",
-                "url": "https://www.linkedin.com/jobs/",
-                "logo": logo,
-                "snippet": f"{company} hiring for {title} in {city}. Strong DSA, projects, communication, and role-specific skills improve shortlist probability.",
-                "skills": ["DSA", "Python", "Java", "SQL", "Communication"],
-                "badges": ["CareerOS fallback", "Verified role"],
-                "updated": datetime.now(timezone.utc).isoformat(),
-                "source": "CareerOS",
-            })
-        return normalized
-
     if not jooble_key:
-        return {"success": True, "source": "CareerOS fallback", "totalCount": 6, "jobs": fallback_jobs(), "warning": "Jooble API key not configured"}
+        # Never invent listings. A missing key means "no live feed", and the UI must show
+        # an empty state rather than plausible-looking roles from named companies.
+        return {"success": True, "source": "unconfigured", "totalCount": 0, "jobs": [],
+                "warning": "Live job search is not configured (JOOBLE_API_KEY missing)."}
 
     async with httpx.AsyncClient() as client:
         try:
             res = await client.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=10.0)
             if res.status_code != 200:
-                return {"success": True, "source": "CareerOS fallback", "totalCount": 6, "jobs": fallback_jobs(), "warning": f"Jooble returned {res.status_code}"}
+                return {"success": True, "source": "unavailable", "totalCount": 0, "jobs": [],
+                        "warning": f"Live job search is unavailable (provider returned {res.status_code})."}
             data = res.json()
             raw_jobs = data.get("jobs", [])
             normalized = []
@@ -7609,11 +7606,12 @@ async def fetch_jooble_jobs(keywords: str = "developer", location: str = "India"
                 "success": True,
                 "source": "jooble",
                 "totalCount": data.get("totalCount") or len(normalized),
-                "jobs": normalized or fallback_jobs()
+                "jobs": normalized,
+                "warning": None if normalized else "The provider returned no matches for this search.",
             }
         except Exception as e:
             log.warning("Jooble fetch failed: %s", e)
-            return {"success": True, "source": "CareerOS fallback", "totalCount": 6, "jobs": fallback_jobs(), "warning": "Live job feed temporarily unavailable"}
+            return {"success": True, "source": "unavailable", "totalCount": 0, "jobs": [], "warning": "Live job search is unavailable."}
 
 @app.get("/api/jobs/discover")
 async def discover_jobs(keywords: str = "developer", location: str = "India", page: int = 1, user=Depends(get_session_user)):

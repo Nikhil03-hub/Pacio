@@ -59,7 +59,7 @@ export default function Overview() {
       },
       { label: "Readiness avg", value: data?.readiness?.avg_readiness, unit: "/100", sub: `${data?.readiness?.needs_intervention || 0} need intervention` },
     ];
-  const dsaTotal = dsa?.total_problems || 474;
+  const dsaTotal = dsa?.total_problems || 0;
   const dsaAvg = workspace?.role === "faculty"
     ? Math.round(workspace?.sections?.readiness?.component_avgs?.dsa || 0)
     : dsa?.by_topic
@@ -313,7 +313,7 @@ export default function Overview() {
         </div>
         <div className="col-span-12 md:col-span-5 editorial p-8 bg-bone-50">
           <div className="font-mono text-[10px] tracking-[0.24em] text-ink-400">DSA INTELLIGENCE / GLANCE</div>
-          <h3 className="font-display text-2xl tracking-tight mt-1">Striver A2Z / {dsaTotal} problems</h3>
+          <h3 className="font-display text-2xl tracking-tight mt-1">DSA curriculum / {dsaTotal} problems</h3>
           <div className="font-display text-7xl tracking-tightest mt-6 tnum">{dsaAvg}%</div>
           <div className="text-ink-500 text-sm">{workspace?.role === "faculty" ? "Department DSA readiness component" : "Average problems solved"}</div>
           <div className="mt-5 grid grid-cols-3 gap-3 text-xs">

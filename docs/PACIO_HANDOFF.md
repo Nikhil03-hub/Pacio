@@ -9,7 +9,7 @@ Current state, what changed, what is blocked, and how to verify it yourself.
 | Repository | `Pacio-Merged`, remote `Nikhil03-hub/pacio-intelligence` (**public**) |
 | Branch | `main`; five local commits added in this work, **not pushed** |
 | Baseline before this work | HEAD `6aa0f44`, clean tree except one untracked audit file |
-| Tests | 128 passing on 2026-10-23: 32 hardening + 20 tenant-boundary + 3 real-MongoDB + 73 legacy |
+| Tests | 32 hardening + 20 tenant-boundary + 3 real-MongoDB + 73 legacy (re-run after the curriculum change in progress) |
 | Frontend build | Compiles clean; 884 kB gzipped JS |
 | Live site | `https://pacio-two.vercel.app` reachable; **not modified** by this work |
 | Sub-product | `../skill-tank-partner-platform` - Next.js/Supabase, has **uncommitted** work |
@@ -40,6 +40,15 @@ and an email path so a fresh clone is usable.
 **Then:** credential documents removed from tracking and sanitised, `.env.example`, a
 proprietary `LICENSE`, third-party branding stripped from the DSA catalog identifiers, and
 the documentation set.
+
+**Then (data + release-candidate pass):** replaced the third-party DSA catalogue with an
+original 12-topic / 108-problem curriculum (original prompts and rationale), migrated the
+dev database, and fixed a seeding bug that had created 1,230 orphan progress rows when a
+partial reseed regenerated student IDs. Added `scripts/mongo_backup_restore.py`,
+`scripts/migrate_dsa_curriculum.py`, `scripts/rebuild_dsa_progress.py`, removed the
+fabricated Jooble fallback jobs, and documented [CREDENTIAL_REMEDIATION.md](CREDENTIAL_REMEDIATION.md)
+and [DATABASE_RECOVERY.md](DATABASE_RECOVERY.md). A backup/restore drill passed and the
+restored database ran the API.
 
 **Then (real-database pass):** running against a fresh local MongoDB exposed that the Mongo
 startup path seeded only six collections, leaving jobs, the entire DSA catalog, placements,

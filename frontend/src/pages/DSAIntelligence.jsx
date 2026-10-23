@@ -102,8 +102,8 @@ export default function DSAIntelligence() {
           </h1>
           <p className="font-serif text-lg text-ink-500 mt-3 max-w-xl">
             {d.scope?.startsWith("department:")
-              ? `Scoped to your department (${d.scope.split(":")[1]}). Every Striver topic, every student you teach.`
-              : "Every Striver topic. Every student. Every solve. Use the topic map to find weak areas and the leaderboard to find your top contenders."}
+              ? `Scoped to your department (${d.scope.split(":")[1]}). Every curriculum topic, every student you teach.`
+              : "Every curriculum topic. Every student. Every solve. Use the topic map to find weak areas and the leaderboard to find your top contenders."}
           </p>
           {d.scope?.startsWith("department:") && (
             <div className="mt-4 inline-flex pill" data-testid="dsa-scope-badge" style={{ color: "#4a5d3a", borderColor: "#4a5d3a" }}>

@@ -138,7 +138,7 @@ export default function StudentDSA() {
     <PageTransition className="space-y-10">
       <DashboardReveal className="grid grid-cols-12 gap-4">
         <div className="col-span-12 md:col-span-8 editorial p-10 dash-reveal">
-          <div className="font-mono text-[10px] tracking-[0.28em] text-ink-400">§ DSA · STRIVER A2Z</div>
+          <div className="font-mono text-[10px] tracking-[0.28em] text-ink-400">§ DSA · CURRICULUM</div>
           <h1 className="font-display text-5xl md:text-6xl tracking-tightest mt-3" data-testid="sdsa-heading">
             Your <span className="text-accent">solve sheet.</span>
           </h1>

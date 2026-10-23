@@ -304,7 +304,7 @@ export default function StudentHome() {
       {/* DSA breakdown + Recommended jobs */}
       <div className="grid grid-cols-12 gap-4">
         <div className="col-span-12 md:col-span-7 editorial p-8" data-testid="student-dsa-panel">
-          <div className="font-mono text-[10px] tracking-[0.24em] text-ink-400">YOUR STRIVER A2Z · TOPIC PROGRESS</div>
+          <div className="font-mono text-[10px] tracking-[0.24em] text-ink-400">YOUR DSA CURRICULUM · TOPIC PROGRESS</div>
           <h3 className="font-display text-2xl tracking-tight mt-1">Where you stand</h3>
           
           <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-3">

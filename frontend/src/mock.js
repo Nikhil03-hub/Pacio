@@ -24,7 +24,7 @@ export const navLinks = [
     hasDropdown: true,
     items: [
       { title: "Placement Reports", desc: "Board-ready exports and analytics" },
-      { title: "DSA Intelligence", desc: "Question-level Striver A2Z tracking" },
+      { title: "DSA Intelligence", desc: "Question-level pattern tracking" },
       { title: "ATS Intelligence", desc: "Resume versions, keyword gaps, role fit" },
     ],
   },
@@ -170,7 +170,7 @@ export const personas = [
 export const customerStats = [
   { metric: "702", label: "offers in demo data", company: "Sample dataset" },
   { metric: "148", label: "recruiter names", company: "Sample dataset" },
-  { metric: "474", label: "DSA problems tracked", company: "Curriculum catalog" },
+  { metric: "108", label: "DSA problems tracked", company: "Curated curriculum" },
   { metric: "80L", label: "highest demo package", company: "Sample dataset" },
   { metric: "5,450", label: "student profiles", company: "Sample dataset" },
   { metric: "13", label: "intelligence modules", company: "This build" },

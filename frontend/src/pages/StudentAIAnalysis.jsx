@@ -40,7 +40,7 @@ const fallbackAnalysis = {
     { topic_code: "graphs", topic_name: "Graphs", attempted: 10, solved: 4, total: 54 },
   ],
   actions: [
-    "Solve two medium A2Z problems daily from weakest DSA topics.",
+    "Solve two medium curriculum problems daily from weakest DSA topics.",
     "Take one timed aptitude sectional test and review every wrong answer.",
     "Upload a revised resume and close the highest-impact missing keywords.",
     "Complete one mock interview and record STAR-format responses.",

@@ -36,7 +36,7 @@ export default function TrustGrid() {
           <span className="w-1 h-1 rounded-full bg-[#1111111a]" />
           <span>13 intelligence modules</span>
           <span className="w-1 h-1 rounded-full bg-[#1111111a]" />
-          <span>455 Striver A2Z questions</span>
+          <span>108 curated interview questions</span>
           <span className="w-1 h-1 rounded-full bg-[#1111111a]" />
           <span>4.8/5 average rating</span>
         </div>

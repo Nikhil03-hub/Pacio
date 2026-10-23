@@ -13,7 +13,7 @@ First 7 must-have features + central admin + Emergent Google OAuth + SendGrid + 
 ### v2 (2026-01-18 later)
 - 6 distinct role-based workspaces (super_admin, institution_admin, tpo, faculty, student, recruiter)
 - Email + bcrypt password login + Emergent Google OAuth
-- 13 modules wired with real data: Student Intelligence, DSA (Striver A2Z 19 topics · 455 problems), Aptitude (4 sections), Resume ATS, Interview AI, Application Pipeline, Placement Intelligence, Recruiter Intelligence, Training, MOU, Announcements, Reports, Platform Control
+- 13 modules wired with real data: Student Intelligence, DSA (original 12-topic / 108-problem curriculum, replaced 2026-10-23), Aptitude (4 sections), Resume ATS, Interview AI, Application Pipeline, Placement Intelligence, Recruiter Intelligence, Training, MOU, Announcements, Reports, Platform Control
 - 6 institutions seeded across streams (Engineering / Management / Pharmacy / Medical / Degree / Diploma)
 - 470 students with full profiles, 22 recruiters, ~70 jobs, ~880 applications
 

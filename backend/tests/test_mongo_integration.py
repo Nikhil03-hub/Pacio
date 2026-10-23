@@ -61,8 +61,10 @@ def raw_db():
 @pytest.fixture(scope="module", autouse=True)
 def cleanup():
     yield
+    # Hard guard: this suite may only ever drop the uniquely named database it created.
+    assert DB_NAME.startswith("pacio_it_"), "refusing to drop a database this suite did not create"
     sync = MongoClient(MONGO, serverSelectionTimeoutMS=5000)
-    sync.drop_database(DB_NAME)  # only the uniquely named test database this module created
+    sync.drop_database(DB_NAME)
     sync.close()
 
 

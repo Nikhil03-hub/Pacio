@@ -178,31 +178,30 @@ def test_dsa_topics():
     r = requests.get(f"{API}/dsa/topics")
     assert r.status_code == 200
     topics = r.json()["topics"]
-    assert len(topics) == 18
+    assert len(topics) == 12
     codes = {t["code"] for t in topics}
-    expected = {"BASICS", "SORTING", "ARRAYS", "BIN_SEARCH", "STR_BASIC", "LL", "RECURSION",
-                "BIT_MANIP", "STACK", "SLIDING", "HEAP", "GREEDY", "TREE", "BST", "GRAPH",
-                "DP", "TRIES", "STR_ADV"}
+    expected = {"ARRAYS", "POINTERS", "BINSEARCH", "STACK", "LINKED", "TREES", "HEAPS",
+                "GRAPHS", "BACKTRACK", "DP", "GREEDY", "BITS"}
     assert expected.issubset(codes)
-    assert r.json()["total"] == 474
+    assert r.json()["total"] == 108
 
 
 def test_dsa_question_catalog(tpo_session):
     r = tpo_session.get(f"{API}/dsa/questions")
     assert r.status_code == 200
     data = r.json()
-    assert data["total"] == 474
-    assert len(data["questions"]) == 474
+    assert data["total"] == 108
+    assert len(data["questions"]) == 108
     titles = {q["title"] for q in data["questions"]}
-    assert {"Two Sum", "Kadane's Algorithm", "Rotate Matrix", "Merge Intervals"}.issubset(titles)
+    assert {"Two Sum", "Maximum Subarray", "Spiral Matrix", "Merge Intervals"}.issubset(titles)
 
 
 def test_dsa_intelligence_tpo(tpo_session):
     r = tpo_session.get(f"{API}/dsa/intelligence")
     assert r.status_code == 200
     data = r.json()
-    assert len(data["by_topic"]) == 18
-    assert data["total_problems"] == 474
+    assert len(data["by_topic"]) == 12
+    assert data["total_problems"] == 108
     assert len(data["leaderboard"]) == 20
 
 
@@ -212,8 +211,8 @@ def test_student_dashboard(student_session):
     assert r.status_code == 200, r.text
     d = r.json()
     assert d["student"]["name"]
-    assert len(d["dsa"]) == 18
-    assert d["dsa_total"] == 474
+    assert len(d["dsa"]) == 12
+    assert d["dsa_total"] == 108
     assert isinstance(d["aptitude"], list)
     assert isinstance(d["interviews"], list)
     assert isinstance(d["applications"], list)
@@ -223,9 +222,9 @@ def test_student_dashboard(student_session):
     q = student_session.get(f"{API}/me/dsa/questions")
     assert q.status_code == 200, q.text
     qp = q.json()
-    assert qp["total"] == 474
-    assert len(qp["questions"]) == 474
-    assert len(qp["topics"]) == 18
+    assert qp["total"] == 108
+    assert len(qp["questions"]) == 108
+    assert len(qp["topics"]) == 12
 
 
 def test_student_dsa_toggle(student_session):

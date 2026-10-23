@@ -104,7 +104,7 @@ Status vocabulary: **verified** (code path read and exercised), **partial**, **b
 
 | ID | Finding | Fix |
 | --- | --- | --- |
-| F-10 | The MongoDB startup path seeded only six hand-picked collections. Jobs, the DSA catalog (474 questions / 340,931 progress rows), placements, training and announcements were empty on a real database, silently breaking the jobs board and 30% of the readiness score. The in-memory demo looked complete, which is why no earlier test caught it. | Both paths seed the full payload; aptitude progress, resume versions and health scores are backfilled on Mongo too. Verified by count on a fresh database. |
+| F-10 | The MongoDB startup path seeded only six hand-picked collections. Jobs, the DSA catalog (474 questions / 340,931 progress rows *at that time; since replaced by the 108-problem original curriculum*), placements, training and announcements were empty on a real database, silently breaking the jobs board and 30% of the readiness score. The in-memory demo looked complete, which is why no earlier test caught it. | Both paths seed the full payload; aptitude progress, resume versions and health scores are backfilled on Mongo too. Verified by count on a fresh database. |
 | F-11 | Institution-wide PDF/CSV exports and cohort rosters accepted any authenticated user, so a student could download the whole roster. | Staff-only via `require_roles`. |
 | F-12 | Pending (unapproved) accounts could reach data routes that only depended on `get_session_user`. | Central approval gate: pending accounts get 403 on data routes, but can still read `/auth/me` and submit `/signup`. |
 | F-13 | No rate limiting on login, reset, registration or invitations; an in-process counter would not work across serverless instances. | Fixed-window limiter backed by the shared datastore (Mongo or the memory store), applied to the abuse-prone entry points. |
@@ -116,6 +116,14 @@ Status vocabulary: **verified** (code path read and exercised), **partial**, **b
 | F-14 | `seed_payload()` rebuilds ~340k demo rows **on every startup**, even when the database is already populated, so a cold start spent minutes generating data it then discarded. | Startup probes a few collections first; the payload is only generated when the deployment is genuinely empty. Cold start against a populated Mongo dropped to ~35 s. |
 | F-15 | An interrupted frontend build leaves `frontend/build/` in place but empty, and the unguarded `StaticFiles` mount then raised **at import time**, taking the entire API down. | Mount only when `build/static` exists; the SPA fallback already returns a clear 404 when `index.html` is missing. |
 | F-16 | The in-memory fallback is pathologically slow for analytics: `/api/placements/overview` computes readiness for up to 1,000 students and each per-student query scans ~340k rows in pure Python, blocking the event loop long enough to time out other requests. | Not "fixed" — the fallback is demo-only by design and production now refuses to start without Mongo. Documented as a hard operational constraint. |
+
+### Data integrity (fixed in the release-candidate pass)
+
+| ID | Finding | Fix |
+| --- | --- | --- |
+| F-17 | Partial reseeding regenerated `students` with new random IDs while the collection already existed. Dependent rows (`dsa_progress`, `dsa_question_progress`, applications, …) were then inserted against IDs that do not exist. A curriculum migration exposed it as 1,230 phantom students, a demo account with no DSA progress, and a leaderboard of missing names. | Startup and the admin reseed now insert student-derived collections only into a genuinely fresh database; `scripts/rebuild_dsa_progress.py` rebuilds from live students and deletes orphan rows. Verified: 0 orphans, demo student 27 attempted / 9 solved. |
+| F-18 | The Jooble integration fabricated six job listings from named companies whenever the key was missing or the provider failed, flagged only by a `warning` field the UI ignored. | Missing key and provider errors now return an empty list with an explicit warning; no invented postings. |
+| F-19 | The DSA catalogue reproduced a third-party sheet's structure and titles, whose terms prohibit commercial use without consent. | Replaced with an original 12-topic / 108-problem pattern curriculum (original prompts, rationale and ordering). Rights blocker BL-26 closed. |
 
 ### High — fixed
 

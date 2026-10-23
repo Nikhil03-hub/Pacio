@@ -66,6 +66,10 @@ Last full run (2026-10-23): **128 automated tests passed** (32 hardening + 20 te
 | [docs/COMMERCIAL_READINESS.md](docs/COMMERCIAL_READINESS.md) | Scorecard, competitor and pricing evidence, operating costs |
 | [docs/INTEGRATIONS.md](docs/INTEGRATIONS.md) | Third-party services, env var names, failure behaviour |
 | [docs/PACIO_HANDOFF.md](docs/PACIO_HANDOFF.md) | Current status, blockers, owner decisions |
+| [docs/RELEASE_READINESS.md](docs/RELEASE_READINESS.md) | Verified local / real-DB / unverified external / commercial blockers |
+| [docs/DATABASE_RECOVERY.md](docs/DATABASE_RECOVERY.md) | Backup, restore drill, migration integrity, fail-closed guard |
+| [docs/CREDENTIAL_REMEDIATION.md](docs/CREDENTIAL_REMEDIATION.md) | Exposed-credential status and provider rotation steps |
+| [docs/GIT_REPORT.md](docs/GIT_REPORT.md) | Commit inventory for both repositories |
 | [FINAL_PROJECT_DOCUMENTATION.md](FINAL_PROJECT_DOCUMENTATION.md) | Original hackathon build documentation |
 
 ## Known limitations
@@ -75,8 +79,8 @@ Last full run (2026-10-23): **128 automated tests passed** (32 hardening + 20 te
 - Without `MONGO_URL` the app runs in memory and **loses all data on cold start**.
 - No rate limiting, no MFA, no CI, no browser tests, no error monitoring.
 - Initial JS bundle is 884 kB gzipped; accessibility and mobile tables need work.
-- The DSA curriculum follows a third-party sheet whose terms prohibit commercial use without
-  written consent.
+- The DSA curriculum is now an original 12-topic / 108-problem pattern set written for this
+  product (the earlier third-party-derived catalogue was replaced on 2026-10-23).
 
 ## Brand and rights status
 
