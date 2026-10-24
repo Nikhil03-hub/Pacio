@@ -91,7 +91,7 @@ it; the files were relocated, the trees deleted).
 
 | Item | Why not fixed now |
 |---|---|
-| Seed/demo data still contains invented DSA attempt verdicts and runtimes | It belongs to the clearly-labelled synthetic demo tenant, not to a live grading path. Regenerating it is a seed-data change with migration impact. |
+| Demo tenants carry synthetic `solved` / `mastery` progress (no fabricated submission verdicts — checked in `backend/seed_data.py`), and the UI does not label that progress as synthetic | It is demo seed data, not a grading path, but a reviewer could mistake it for real student work. Labelling it is a UI/seed change that needs a migration decision. |
 | `question_id` derived from the title slug | Re-wording a title orphans its spec and stored attempts. Today's slug-cap change renamed exactly one id (`dsa_pointers_006`) and the validator caught it — that is the detector working, not a fix. Freeze ids in a manifest before any re-wording campaign. `scripts/rebuild_dsa_progress.py` must be re-run against the dev DB to realign existing progress rows. |
 | No per-case timeout in the spec harness | A looping reference hangs the validator; a Windows-safe fix is a subprocess worker. |
 | Restricted `exec` is not a sandbox | Measured (`__mro__` escape returns 245 classes). Fine for trusted artefacts only; learner execution needs a real sandbox. |
