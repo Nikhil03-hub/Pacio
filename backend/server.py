@@ -1108,6 +1108,7 @@ async def _ensure_student_dsa_catalog(student: dict) -> None:
 async def _student_dsa_question_payload(student: dict) -> dict:
     await _ensure_student_dsa_catalog(student)
     questions = await db.dsa_questions.find({}, {"_id": 0}).sort("global_order", 1).to_list(DSA_TOTAL)
+    _with_gradability(questions)
     progress_rows = await db.dsa_question_progress.find(
         {"student_id": student["student_id"]},
         {"_id": 0},
@@ -2266,10 +2267,30 @@ async def dsa_topics():
     return {"topics": DSA_TOPICS, "total": DSA_TOTAL}
 
 
+_GRADABILITY_BY_ID = {row["question_id"]: (row["spec_status"], row["gradable"])
+                      for row in build_dsa_question_bank()}
+
+
+def _with_gradability(rows: list[dict]) -> list[dict]:
+    """Tell the truth about gradability regardless of when the database was seeded.
+
+    A catalogue row keeps whatever `gradable` value it was inserted with, so a database seeded
+    before the harness existed would keep advertising drafts as auto-gradable. The spec file is
+    the authority, so it is applied on read.
+    """
+    for row in rows:
+        status, gradable = _GRADABILITY_BY_ID.get(row.get("question_id"), ("draft", False))
+        row["spec_status"] = status
+        row["gradable"] = gradable
+    return rows
+
+
 @app.get("/api/dsa/questions")
 async def dsa_questions(user=Depends(get_session_user)):
     questions = await db.dsa_questions.find({}, {"_id": 0}).sort("global_order", 1).to_list(DSA_TOTAL)
-    return {"questions": questions, "topics": DSA_TOPICS, "total": DSA_TOTAL}
+    _with_gradability(questions)
+    return {"questions": questions, "topics": DSA_TOPICS, "total": DSA_TOTAL,
+            "gradable_total": sum(1 for row in questions if row["gradable"])}
 
 
 @app.get("/api/me/dsa/questions")

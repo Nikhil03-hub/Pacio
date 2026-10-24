@@ -18,10 +18,10 @@ MongoDB 8.2.1 on `127.0.0.1:27017`, no third-party API credentials.
 | --- | --- | --- |
 | Security/authorisation regressions | `pytest backend/tests/test_hardening.py -q` | **32 passed**, ~93 s |
 | DSA specification harness | `pytest backend/tests/test_dsa_specs.py -q` | **28 passed** |
-| DSA grading honesty | `pytest backend/tests/test_dsa_grading_honesty.py -q` | **5 passed** |
+| DSA grading honesty | `pytest backend/tests/test_dsa_grading_honesty.py -q` | **6 passed** |
 | Data import pipeline | `pytest backend/tests/test_data_import.py -q` | **18 passed** |
 | Job feed adapters | `pytest backend/tests/test_job_feeds.py -q` | **16 passed** |
-| Total | 32 + 20 + 28 + 5 + 18 + 16 + 3 + 73 | **195 passed, every suite exit 0** (2026-10-24) |
+| Total | 32 + 20 + 28 + 6 + 18 + 16 + 3 + 73 | **196 passed, every suite exit 0** (2026-10-24) |
 | Multi-tenant role matrix (Tenant A vs synthetic Tenant B) | `pytest backend/tests/test_tenant_isolation.py -q` | **20 passed**, ~102 s |
 | Real-MongoDB integration | `PACIO_TEST_MONGO_URL=mongodb://127.0.0.1:27017 pytest backend/tests/test_mongo_integration.py -q` | **3 passed**, ~18 s |
 | Legacy feature suites | `bash scripts/release_gate.sh` against a Mongo-backed server with `RATE_LIMIT_ENABLED=false` | **73 passed** (7 m 01 s), exit 0 |
@@ -133,4 +133,4 @@ determined from this machine. Treat these as owner checks:
 2. Prove one real email and one real Telegram message with provider ids.
 3. Rehearse an Atlas backup/restore and record the restored counts.
 4. Resolve or isolate the rights blockers above.
-5. Add CI so the 195 tests run on every change, and a browser-level journey suite.
+5. Add CI so the 196 tests run on every change, and a browser-level journey suite.

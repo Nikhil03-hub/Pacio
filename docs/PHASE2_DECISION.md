@@ -5,8 +5,8 @@ commands in `IMPLEMENTATION_DIFF_REPORT.md`. Written 2026-10-24. Nothing was pus
 
 ## The gate
 
-**195 tests pass, every suite exit 0. Frontend builds clean. DSA validator: 20 complete, 0 invalid,
-88 drafts.** Base was 128 tests; this phase added 67 and two new suites.
+**196 tests pass, every suite exit 0. Frontend builds clean. DSA validator: 20 complete, 0 invalid,
+88 drafts.** Base was 128 tests; this phase added 68 and two new suites.
 
 ## Workstream verdicts
 

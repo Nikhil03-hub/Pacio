@@ -7,11 +7,11 @@ No commit was pushed, nothing was deployed, no Git history was rewritten.
 
 | Check | Command | Result |
 |---|---|---|
-| Full release gate | `bash scripts/release_gate.sh` (server against local MongoDB, `RATE_LIMIT_ENABLED=false`) | **195 passed, 0 failed**, every suite exit 0 |
+| Full release gate | `bash scripts/release_gate.sh` (server against local MongoDB `pacio_dev_verify`, `RATE_LIMIT_ENABLED=false`) | **196 passed, 0 failed**, every suite exit 0 (re-run after the gradability-overlay change) |
 | — hardening | `pytest backend/tests/test_hardening.py` | 32 passed, exit 0 |
 | — tenant isolation | `pytest backend/tests/test_tenant_isolation.py` | 20 passed, exit 0 |
 | — DSA spec harness | `pytest backend/tests/test_dsa_specs.py` | 28 passed, exit 0 |
-| — DSA grading honesty | `pytest backend/tests/test_dsa_grading_honesty.py` | 5 passed, exit 0 |
+| — DSA grading honesty | `pytest backend/tests/test_dsa_grading_honesty.py` | 6 passed, exit 0 |
 | — data import | `pytest backend/tests/test_data_import.py` | 18 passed, exit 0 |
 | — job feeds | `pytest backend/tests/test_job_feeds.py` | 16 passed, exit 0 |
 | — real MongoDB | `pytest backend/tests/test_mongo_integration.py` | 3 passed, exit 0 |
@@ -22,8 +22,8 @@ No commit was pushed, nothing was deployed, no Git history was rewritten.
 | Job feed pilot (memory + MongoDB) | `python scripts/job_feed_pilot.py [...]` | exit 0 both engines, identical behaviour |
 | Frontend production build | `cd frontend && CI=false npm run build` | **exit 0**, `main.js` 885.29 kB gzipped |
 
-Baseline was 128 passing tests across four suites; this change set adds 67 tests and two new
-suites, for 195.
+Baseline was 128 passing tests across four suites; this change set adds 68 tests and two new
+suites, for 196.
 
 ## 2. Every changed file
 
@@ -31,7 +31,7 @@ suites, for 195.
 
 | File | Why |
 |---|---|
-| `backend/server.py` | **Removed the fabricated DSA judge.** `_simulated_code_result` invented "Accepted", "Sample 1/2/Hidden edge" pass flags and runtime/memory numbers from a token count, and a submission could set `solved: true` and `mastery: 88`. Replaced by `_static_code_review` (`executed: false`, `graded: false`, honest signals + note). `submit_my_dsa_code` no longer writes `solved`/`mastery`/`best_submission_id`/`last_solved_at` from an unexecuted submission. |
+| `backend/server.py` | **Removed the fabricated DSA judge.** `_simulated_code_result` invented "Accepted", "Sample 1/2/Hidden edge" pass flags and runtime/memory numbers from a token count, and a submission could set `solved: true` and `mastery: 88`. Replaced by `_static_code_review` (`executed: false`, `graded: false`, honest signals + note). `submit_my_dsa_code` no longer writes `solved`/`mastery`/`best_submission_id`/`last_solved_at` from an unexecuted submission. Also overlays `spec_status`/`gradable` on every DSA question payload (`_with_gradability`), so a database seeded before the harness existed cannot keep advertising drafts as auto-gradable, and `/api/dsa/questions` reports `gradable_total`. |
 | `backend/dsa_catalog.py` | Gradability now requires a harness stamp (`DSA_HARNESS_VERSION`), three-state `spec_status`, corrupt spec file raises instead of silently demoting the bank, slug cap 40 → 48 with trailing-hyphen strip, and the module docstring no longer claims the problem list is unreproduced. |
 | `frontend/src/pages/StudentDSAProblem.jsx` | Removed the promise that "successfully passing the test suite … updates your placement metrics"; console panel now renders the static-review signals and the "not executed · not graded" label; fake test-case chips gone. |
 | `frontend/src/pages/StudentDSA.jsx` | Same panel/label change in the inline runner. |

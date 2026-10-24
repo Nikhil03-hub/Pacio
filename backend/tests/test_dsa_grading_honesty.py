@@ -55,6 +55,18 @@ def any_question_id(client):  # depends on client so app startup has seeded the 
     return row["question_id"]
 
 
+def test_question_list_reports_gradability_from_the_spec_file(client, student_token):
+    """A database seeded before the harness must not keep advertising drafts as gradable."""
+    res = client.get("/api/dsa/questions", headers={"Authorization": f"Bearer {student_token}"})
+    assert res.status_code == 200, res.text[:200]
+    body = res.json()
+    gradable = [row for row in body["questions"] if row["gradable"]]
+    assert len(gradable) == 20, "gradable must come from the harness, not from the seed"
+    assert body["gradable_total"] == 20
+    assert all(row["spec_status"] == "validated" for row in gradable)
+    assert all(row["spec_status"] == "draft" for row in body["questions"] if not row["gradable"])
+
+
 def test_static_review_is_honest_about_not_running_code(any_question_id):
     question = run(server.db.dsa_questions.find_one({"question_id": any_question_id}, {"_id": 0}))
     review = server._static_code_review(question, "python",
