@@ -182,7 +182,10 @@ export default function StudentDSAProblem() {
                 <div className="border-t border-b border-line py-5">
                   <div className="font-mono text-[10px] tracking-[0.24em] text-ink-400 mb-2 uppercase font-semibold">Problem Description</div>
                   <p className="font-serif text-sm text-ink-600 leading-relaxed">
-                    Solve the problem <strong>{question.title}</strong> ({question.subtopic_name}) in the Monaco editor and submit your approach. Pacio does not compile or run submitted code in this build, so a submission is recorded as an attempt with a static review of its structure - it is not graded, does not mark the problem solved, and does not change your placement metrics.
+                    {question.gradable
+                      ? "This problem has a validated test specification, but the app still cannot execute your code. "
+                      : "This problem has no validated test specification yet, so it cannot be graded at all. "}
+                    Solve <strong>{question.title}</strong> ({question.subtopic_name}) in the Monaco editor and submit your approach. Pacio does not compile or run submitted code in this build, so a submission is recorded as an attempt with a static review of its structure - it is not graded, does not mark the problem solved, and does not change your placement metrics.
                   </p>
                 </div>
 

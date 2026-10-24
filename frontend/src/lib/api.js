@@ -1,6 +1,14 @@
 import axios from "axios";
 
-const BASE = process.env.REACT_APP_BACKEND_URL || "";
+const configuredBase = process.env.REACT_APP_BACKEND_URL || "";
+
+// A local build can bake a loopback API URL in from .env.local. If that bundle is then served
+// from a real host, every request would go to the visitor's own machine, so fall back to
+// same-origin - which is what the single-function deployment expects anyway.
+const isLoopback = (url) => /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/i.test(url || "");
+const servedFromLoopback = typeof window !== "undefined"
+  && /^(localhost|127\.0\.0\.1)$/i.test(window.location.hostname);
+const BASE = isLoopback(configuredBase) && !servedFromLoopback ? "" : configuredBase;
 const TOKEN_KEY = "careeros_access_token";
 
 export const api = axios.create({

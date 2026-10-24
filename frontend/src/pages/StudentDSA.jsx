@@ -263,7 +263,12 @@ export default function StudentDSA() {
                     >
                       {question.solved ? <CheckCircle2 size={15} className="text-accent" /> : <Circle size={15} className="text-ink-300" />}
                       <span className={`text-xs leading-snug truncate ${question.solved ? "text-ink font-semibold" : "text-ink/65"}`}>{question.title}</span>
-                      <span className="font-mono text-[9px] text-ink/40 uppercase">{question.difficulty}</span>
+                      <span className="text-right leading-tight">
+                        <span className="block font-mono text-[9px] text-ink/40 uppercase">{question.difficulty}</span>
+                        {question.gradable && (
+                          <span className="block font-mono text-[8px] uppercase tracking-[0.12em] text-accent" title="Has a validated test specification. Submissions are still reviewed statically, not executed.">spec</span>
+                        )}
+                      </span>
                     </button>
                   ))}
                   {filteredQuestions.length === 0 && (
@@ -284,6 +289,9 @@ export default function StudentDSA() {
               <div className="flex flex-wrap gap-2">
                 <Badge variant="solid">{selectedQuestion.difficulty}</Badge>
                 <Badge variant="accent">{selectedQuestion.topic_code}</Badge>
+                {selectedQuestion.gradable
+                  ? <Badge variant="success">VALIDATED SPEC</Badge>
+                  : <Badge variant="warning">DRAFT SPEC</Badge>}
                 {selectedQuestion.solved ? (
                   <Badge variant="success">SOLVED</Badge>
                 ) : (
