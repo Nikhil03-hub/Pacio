@@ -104,7 +104,7 @@ def from_sparql_bindings(payload: dict) -> list[dict]:
             "aishe_code": [value("aishe")] if value("aishe") else [],
             "aicte_permanent_id": [value("aictePerm")] if value("aictePerm") else [],
             "aicte_application_id": [value("aicteApp")] if value("aicteApp") else [],
-            "state_resolved": None,
+            "state_resolved": value("stateLabel"),
         })
     return rows
 
@@ -206,6 +206,8 @@ async def main() -> int:
     parser.add_argument("--link-delay", type=float, default=0.4)
     parser.add_argument("--source-file", default=str(SAMPLE),
                         help="Wikidata sample JSON or a raw SPARQL JSON response")
+    parser.add_argument("--max-rows", type=int, default=0,
+                        help="cap the slice (deterministic by qid) to sample a large population")
     parser.add_argument("--keep", action="store_true")
     args = parser.parse_args()
 
@@ -220,6 +222,10 @@ async def main() -> int:
         decisions[decision].append((row, reason))
     records = [to_record(row, retrieved_at) for row, _ in decisions["keep"]]
     kept, duplicates = dedupe(records)
+
+    if args.max_rows and len(kept) > args.max_rows:
+        # Deterministic sample: same input, same subset, so two runs are comparable.
+        kept = sorted(kept, key=lambda r: r["official_id"])[:args.max_rows]
 
     if args.check_links:
         checked = 0
