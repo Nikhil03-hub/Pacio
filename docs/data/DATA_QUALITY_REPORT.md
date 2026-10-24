@@ -77,3 +77,30 @@ A record may enter the product only if:
 
 Status: existing DB integrity **VERIFIED**; external dataset quality beyond sampled files
 **NOT RUN** by design (research phase, no imports).
+
+
+---
+
+## Phase 3 addendum — measured quality of the first real slice (2026-10-24)
+
+The Wikidata pilot is the first external dataset measured end-to-end rather than sampled:
+
+| Metric | Measured |
+|---|---|
+| Sampled rows | 300 |
+| Kept after engineering / K-12 / identifier / department filters | 28 (9.3%) |
+| Excluded as K-12 | 54 |
+| Excluded as outside engineering scope | 203 |
+| Excluded for no website and no identifier | 13 |
+| Rows with an AISHE code | 19 / 28 |
+| Rows with a website | 24 / 28 |
+| Websites that resolve (live check) | 16 / 24 (67% of those with a URL) |
+| States covered | 9 |
+| Independent spot-check of 8 records against their own sites | 2 pass, 1 partial, 1 fail (hijacked domain), 4 unknown |
+| Re-import of identical rows | 0 new, 0 updated, 28 unchanged |
+| Rollback | 28 deleted, 0 remaining |
+
+Conclusion: the pipeline is sound and the licence is clean, but **field quality is uneven** —
+names/cities/states are usable, URLs are not, and no row may be shown as verified. Every imported
+row is stored `data_status: unverified` with `trust_level: community-maintained`. Full detail:
+`WIKIDATA_IMPORT_PILOT.md`.

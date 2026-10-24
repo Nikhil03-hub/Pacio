@@ -157,3 +157,31 @@ honest empty state. Adzuna is the one feed worth buying for India coverage.
 
 The dataset is now a documented starting point, not a solved problem. The highest-value
 legitimate work is first-party college data and licensed job feeds, not bulk scraping.
+
+
+---
+
+## Phase 3 addendum (2026-10-24)
+
+Two findings from this phase change the picture above, and one does not.
+
+1. **data.gov.in does declare a licence — in the footer, not in resource metadata.** A real browser
+   session read: *"Content is owned by the respective Ministries/Departments/Organizations and
+   licensed under the Government Open Data License-India."* Two automated passes had concluded
+   "no licence field" and demoted the source; that conclusion was wrong. Ministry-published
+   **aggregate** tables are reusable under GODL with attribution. Institution-level data is still
+   unavailable there — the closest "institute-wise" hit is a 321-byte parliamentary answer.
+   Evidence: `OGD_LICENCE_BROWSER_VERIFICATION.md`.
+
+2. **Wikidata is the first source whose licence needs no interpretation — and it is a weak directory.**
+   CC0 covers the structured data. A 300-row sample yielded 28 engineering institutions after
+   filtering (9.3%), 57% of their websites resolve, and 2 of 8 spot-checked records were fully
+   confirmed. It is usable as a labelled seed list, not as an authoritative directory. Evidence:
+   `WIKIDATA_FEASIBILITY.md`, `WIKIDATA_IMPORT_PILOT.md`.
+
+3. **A second AICTE mirror does not solve the AICTE problem.** `anburocky3/indian-colleges-data`
+   (13,089 rows, MIT repo, README says "sourced from the AICTE website") fails exactly like SRC-001:
+   a wrapper's licence cannot license AICTE's data. SRC-049 NEEDS_REVIEW. Evidence:
+   `PERMITTED_DATASET_SCAN.md`.
+
+No placement dataset with both a licence and a stated reporting year was found in this pass.
