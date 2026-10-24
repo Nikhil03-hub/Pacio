@@ -9,7 +9,7 @@ Current state, what changed, what is blocked, and how to verify it yourself.
 | Repository | `Pacio-Merged`, remote `Nikhil03-hub/pacio-intelligence` (**public**) |
 | Branch | `main`; **eight local commits** added in this work, **not pushed** |
 | Baseline before this work | HEAD `6aa0f44`, clean tree except one untracked audit file |
-| Tests | **212 passed in one clean gate run** (32 hardening + 20 tenant-boundary + 44 DSA harness + 6 DSA grading honesty + 18 data import + 16 job feeds + 3 real-MongoDB + 73 legacy; every suite exit 0, final 2026-10-25 run) |
+| Tests | **218 passed in one clean gate run** (32 hardening + 20 tenant-boundary + 50 DSA harness + 6 DSA grading honesty + 18 data import + 16 job feeds + 3 real-MongoDB + 73 legacy; every suite exit 0, final 2026-10-25 run) |
 | Frontend build | Compiles clean; 884 kB gzipped JS |
 | Live site | `https://pacio-two.vercel.app` reachable; **not modified** by this work |
 | Sub-product | `../skill-tank-partner-platform` - Next.js/Supabase, has **uncommitted** work |

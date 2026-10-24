@@ -10,8 +10,13 @@ dsa_bits_002_number-of-1-bits,Number of 1 Bits,BITS,Easy,exact,9,True,True,COMPL
 dsa_bits_003_counting-bits,Counting Bits,BITS,Easy,exact,9,True,True,COMPLETE,
 dsa_bits_004_missing-number,Missing Number,BITS,Easy,exact,10,True,True,COMPLETE,
 dsa_dp_001_climbing-stairs,Climbing Stairs,DP,Easy,exact,5,True,True,COMPLETE,
+dsa_dp_002_house-robber,House Robber,DP,Medium,exact,12,True,True,COMPLETE,
+dsa_dp_004_coin-change,Coin Change,DP,Medium,exact,11,True,True,COMPLETE,
+dsa_dp_007_longest-common-subsequence,Longest Common Subsequence,DP,Medium,exact,11,True,True,COMPLETE,
 dsa_dp_008_edit-distance,Edit Distance,DP,Hard,exact,9,True,True,COMPLETE,
+dsa_dp_010_unique-paths,Unique Paths,DP,Medium,exact,10,True,True,COMPLETE,
 dsa_graphs_006_course-schedule,Course Schedule,GRAPHS,Medium,exact,9,True,True,COMPLETE,
+dsa_graphs_007_course-schedule-ii,Course Schedule II,GRAPHS,Medium,exact,13,True,True,COMPLETE,
 dsa_graphs_008_number-of-connected-components,Number of Connected Components,GRAPHS,Medium,exact,8,True,True,COMPLETE,
 dsa_graphs_009_word-ladder,Word Ladder,GRAPHS,Hard,exact,10,True,True,COMPLETE,
 dsa_graphs_010_network-delay-time,Network Delay Time,GRAPHS,Medium,exact,8,True,True,COMPLETE,
@@ -26,6 +31,7 @@ dsa_linked_005_linked-list-cycle,Linked List Cycle,LINKED,Easy,exact,9,True,True
 dsa_linked_006_linked-list-cycle-ii,Linked List Cycle II,LINKED,Medium,exact,8,True,True,COMPLETE,
 dsa_linked_007_add-two-numbers,Add Two Numbers,LINKED,Medium,exact,8,True,True,COMPLETE,
 dsa_pointers_004_container-with-most-water,Container With Most Water,POINTERS,Medium,exact,5,True,True,COMPLETE,
+dsa_pointers_005_trapping-rain-water,Trapping Rain Water,POINTERS,Hard,exact,13,True,True,COMPLETE,
 dsa_pointers_006_longest-substring-without-repeating-characters,Longest Substring Without Repeating Characters,POINTERS,Medium,exact,5,True,True,COMPLETE,
 dsa_stack_001_valid-parentheses,Valid Parentheses,STACK,Easy,exact,6,True,True,COMPLETE,
 dsa_trees_001_maximum-depth-of-binary-tree,Maximum Depth of Binary Tree,TREES,Easy,exact,7,True,True,COMPLETE,
@@ -59,14 +65,10 @@ dsa_binsearch_007_capacity-to-ship-packages-within-d-days,Capacity to Ship Packa
 dsa_binsearch_008_median-of-two-sorted-arrays,Median of Two Sorted Arrays,BINSEARCH,Hard,,0,False,False,DRAFT,no validated specification yet
 dsa_bits_005_pow-x-n,"Pow(x, n)",BITS,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_bits_006_reverse-integer,Reverse Integer,BITS,Medium,,0,False,False,DRAFT,no validated specification yet
-dsa_dp_002_house-robber,House Robber,DP,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_dp_003_house-robber-ii,House Robber II,DP,Medium,,0,False,False,DRAFT,no validated specification yet
-dsa_dp_004_coin-change,Coin Change,DP,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_dp_005_longest-increasing-subsequence,Longest Increasing Subsequence,DP,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_dp_006_word-break,Word Break,DP,Medium,,0,False,False,DRAFT,no validated specification yet
-dsa_dp_007_longest-common-subsequence,Longest Common Subsequence,DP,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_dp_009_partition-equal-subset-sum,Partition Equal Subset Sum,DP,Medium,,0,False,False,DRAFT,no validated specification yet
-dsa_dp_010_unique-paths,Unique Paths,DP,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_dp_011_decode-ways,Decode Ways,DP,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_dp_012_target-sum,Target Sum,DP,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_graphs_001_number-of-islands,Number of Islands,GRAPHS,Medium,,0,False,False,DRAFT,no validated specification yet
@@ -74,7 +76,6 @@ dsa_graphs_002_clone-graph,Clone Graph,GRAPHS,Medium,,0,False,False,DRAFT,no val
 dsa_graphs_003_max-area-of-island,Max Area of Island,GRAPHS,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_graphs_004_rotting-oranges,Rotting Oranges,GRAPHS,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_graphs_005_pacific-atlantic-water-flow,Pacific Atlantic Water Flow,GRAPHS,Medium,,0,False,False,DRAFT,no validated specification yet
-dsa_graphs_007_course-schedule-ii,Course Schedule II,GRAPHS,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_greedy_002_insert-interval,Insert Interval,GREEDY,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_greedy_003_non-overlapping-intervals,Non-overlapping Intervals,GREEDY,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_greedy_004_meeting-rooms-ii,Meeting Rooms II,GREEDY,Medium,,0,False,False,DRAFT,no validated specification yet
@@ -90,7 +91,6 @@ dsa_linked_008_copy-list-with-random-pointer,Copy List with Random Pointer,LINKE
 dsa_pointers_001_valid-palindrome,Valid Palindrome,POINTERS,Easy,,0,False,False,DRAFT,no validated specification yet
 dsa_pointers_002_two-sum-ii-sorted-input,Two Sum II (Sorted Input),POINTERS,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_pointers_003_3sum,3Sum,POINTERS,Medium,,0,False,False,DRAFT,no validated specification yet
-dsa_pointers_005_trapping-rain-water,Trapping Rain Water,POINTERS,Hard,,0,False,False,DRAFT,no validated specification yet
 dsa_pointers_007_longest-repeating-character-replacement,Longest Repeating Character Replacement,POINTERS,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_pointers_008_minimum-window-substring,Minimum Window Substring,POINTERS,Hard,,0,False,False,DRAFT,no validated specification yet
 dsa_pointers_009_find-all-anagrams-in-a-string,Find All Anagrams in a String,POINTERS,Medium,,0,False,False,DRAFT,no validated specification yet

@@ -1,0 +1,127 @@
+{
+  "engine": "mongodb (disposable db 'pacio_dryrun_wikidata')",
+  "source": "SRC-WIKIDATA",
+  "sampled_rows": 1500,
+  "kept_after_filters": 1283,
+  "excluded": 217,
+  "exclusion_reasons": {
+    "no website and no education identifier": 181,
+    "K-12 school, not higher education": 11,
+    "department, not a standalone institution": 20,
+    "outside engineering/technical scope": 4,
+    "not an educational institution": 1
+  },
+  "dedupe_dropped": 262,
+  "final_rows": 250,
+  "dry_run": {
+    "new": 250,
+    "updated": 0,
+    "unchanged": 0,
+    "invalid": [],
+    "total": 250
+  },
+  "first_import": {
+    "new": 250,
+    "updated": 0,
+    "unchanged": 0
+  },
+  "second_import": {
+    "new": 0,
+    "updated": 0,
+    "unchanged": 250
+  },
+  "stored_before_rollback": 250,
+  "website_states": {
+    "connection_failed": 14,
+    "ok": 163,
+    "dns_or_connection": 41,
+    "http_404": 10,
+    "http_500": 1,
+    "http_403": 3,
+    "http_503": 3,
+    "unreachable": 3,
+    "not_checked": 10,
+    "http_522": 1,
+    "http_530": 1
+  },
+  "rows_with_aishe_code": 111,
+  "rows_with_website": 240,
+  "states_covered": 21,
+  "sample_rows": [
+    {
+      "name": "Government College of Technology, Coimbatore",
+      "city": "Coimbatore",
+      "state": "Tamil Nadu",
+      "website_status": "connection_failed",
+      "data_status": "unverified",
+      "trust_level": "community-maintained"
+    },
+    {
+      "name": "Nandha Engineering College",
+      "city": "Erode",
+      "state": "Tamil Nadu",
+      "website_status": "ok",
+      "data_status": "unverified",
+      "trust_level": "community-maintained"
+    },
+    {
+      "name": "Kalinga Institute of Industrial Technology",
+      "city": "Bhubaneswar",
+      "state": "Odisha",
+      "website_status": "ok",
+      "data_status": "unverified",
+      "trust_level": "community-maintained"
+    },
+    {
+      "name": "Krishna Institute of Technology",
+      "city": "Kanpur",
+      "state": "Uttar Pradesh",
+      "website_status": "ok",
+      "data_status": "unverified",
+      "trust_level": "community-maintained"
+    },
+    {
+      "name": "Potti Sriramulu College of Engineering & Technology",
+      "city": "Vijayawada",
+      "state": "Andhra Pradesh",
+      "website_status": "ok",
+      "data_status": "unverified",
+      "trust_level": "community-maintained"
+    },
+    {
+      "name": "Siddaganga Institute of Technology",
+      "city": "",
+      "state": "",
+      "website_status": "ok",
+      "data_status": "unverified",
+      "trust_level": "community-maintained"
+    },
+    {
+      "name": "Thangal Kunju Musaliar College of Engineering, Kollam",
+      "city": "Kollam district",
+      "state": "Kerala",
+      "website_status": "ok",
+      "data_status": "unverified",
+      "trust_level": "community-maintained"
+    },
+    {
+      "name": "Vidya Jyothi Institute of Technology",
+      "city": "",
+      "state": "",
+      "website_status": "ok",
+      "data_status": "unverified",
+      "trust_level": "community-maintained"
+    }
+  ],
+  "rollback": {
+    "batch_id": "imp_20261024T195033Z_SRC-WIKIDATA_d833eb",
+    "collection": "institutions_public",
+    "status": "rolled_back",
+    "forced": false,
+    "deleted": 250,
+    "restored": 0,
+    "undo_items": 250
+  },
+  "rows_after_rollback": 0,
+  "cleanup": "dropped"
+}

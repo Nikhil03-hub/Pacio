@@ -1,17 +1,17 @@
 # DSA Validation Report
 
-Phase 2/3, Workstream A deliverable #2. Written 2026-10-24; updated 2026-10-25 after batch 4
-(trees and bit manipulation).
+Phase 2/3, Workstream A deliverable #2. Written 2026-10-24; updated 2026-10-25 after batch 5
+(DP and a first Hard problem).
 
 ```
 .venv/Scripts/python.exe scripts/validate_dsa_specs.py
-  -> specs supplied: 36 | COMPLETE: 36 | INVALID: 0 | DRAFT: 72        exit 0
+  -> specs supplied: 42 | COMPLETE: 42 | INVALID: 0 | DRAFT: 66        exit 0
 .venv/Scripts/python.exe -m pytest backend/tests/test_dsa_specs.py -q
-  -> 44 passed
+  -> 50 passed
 .venv/Scripts/python.exe -m pytest backend/tests/test_dsa_grading_honesty.py -q
   -> 6 passed
 .venv/Scripts/python.exe -c "…build_dsa_question_bank()…"
-  -> rows 108 | validated 36 | draft 72 | gradable 36
+  -> rows 108 | validated 42 | draft 66 | gradable 42
 ```
 
 Machine-readable per-problem state: `DSA_SPECIFICATION_COMPLETION.csv`.
@@ -21,8 +21,8 @@ External originality measurement: `DSA_ORIGINALITY_CHECK.md`.
 ## Where it started and where it is
 
 At the end of Phase 1 the honest figure was **0 of 108 gradable** — the catalogue was prose only.
-Four batches later it is **36 of 108**, every one machine-verified, with all twelve topics covered
-and trees and bit manipulation now substantially validated. The count rose only by making problems
+Five batches later it is **42 of 108**, every one machine-verified, all twelve topics covered, and
+DP — the weakest area for a serious candidate — is now half validated. The count rose only by making problems
 genuinely testable; nothing was re-labelled to look better.
 
 ## What "validated" means, and what changed under it
@@ -56,17 +56,17 @@ mutant accidentally passes is INVALID — the tests must have teeth.
 |---|---|---|---|
 | LINKED | 7 | 8 | 1 |
 | TREES | 7 | 12 | 5 |
-| **GRAPHS** | **4** | 10 | 6 |
+| GRAPHS | 5 | 10 | 5 |
 | **BACKTRACK** | **3** | 8 | 5 |
 | **HEAPS** | **2** | 6 | 4 |
-| DP | 2 | 12 | 10 |
+| DP | 6 | 12 | 6 |
 | ARRAYS | 2 | 12 | 10 |
-| POINTERS | 2 | 10 | 8 |
+| POINTERS | 3 | 10 | 7 |
 | BINSEARCH | 1 | 8 | 7 |
 | STACK | 1 | 8 | 7 |
 | GREEDY | 1 | 8 | 7 |
 | BITS | 4 | 6 | 2 |
-| **Total** | **36** | 108 | 72 |
+| **Total** | **42** | 108 | 66 |
 
 Batch 4 (6 specs — invert / same-tree / balanced binary tree, number-of-1-bits, counting-bits,
 missing-number) deepened the two topics a student meets first. Batch 3 (10 specs, all lead-reviewed)
@@ -75,14 +75,16 @@ closed the exact gap the audit called a blocker:
 `number-of-connected-components`, `network-delay-time`, `word-ladder` (GRAPHS);
 `subsets`, `generate-parentheses`, `palindrome-partitioning` (BACKTRACK); `edit-distance` (DP).
 
-**Review independence is uneven.** 26 of the 36 specs were authored by a subagent and reviewed by the lead (author ≠ reviewer). The first 10 were authored and reviewed by the same agent and still carry `reviewer: "pending"` — they are machine-validated but not independently reviewed, and that is recorded rather than papered over.
+**Review independence is uneven.** 32 of the 42 specs were authored by a subagent and reviewed by the lead (author ≠ reviewer). The first 10 were authored and reviewed by the same agent and still carry `reviewer: "pending"` — they are machine-validated but not independently reviewed, and that is recorded rather than papered over.
 
-Difficulty of the 36: **16 Easy, 18 Medium, 2 Hard** (`word-ladder`, `edit-distance`). The bank is
+Difficulty of the 42: **16 Easy, 23 Medium, 3 Hard** (`word-ladder`, `edit-distance`,
+`trapping-rain-water`). The bank is
 no longer Hard-free, though two is still thin for a "crack a product company" claim.
 
-Hidden tests per spec: 4 (9), 5 (8), 6 (8), 7 (9), 8 (2). Examples: 2 for 26 specs, 1 for the first 10. Edge cases ≥3 everywhere.
+Hidden tests per spec: 4 (9), 5 (8), 6 (8), 7 (9), 8 (3), 9 (2), 10 (1), 11 (2). Examples: 2 for
+32 specs, 1 for the first 10. Edge cases ≥3 everywhere.
 
-Checkers: `exact` 32, `unordered` 3, `nested_unordered` 1. The previously untested checker paths are
+Checkers: `exact` 38, `unordered` 3, `nested_unordered` 1. The previously untested checker paths are
 now both exercised by real content **and** unit-tested (`test_every_shipped_checker_is_exercised`).
 
 ## Defects found and fixed (all with tests)
@@ -158,18 +160,18 @@ would have made the count 31 and the claim false.
 
 ## What may be said about DSA today
 
-Allowed: "108 curated canonical problems across 12 patterns; **36 are auto-gradable and machine
+Allowed: "108 curated canonical problems across 12 patterns; **42 are auto-gradable and machine
 verified**, including graphs, heaps, backtracking and two Hard problems; the rest are practice
 prompts with solutions and rationale."
 
 Not allowed: "108 auto-gradable problems", "an original problem bank", any grading claim about the
-78 drafts, or any company-wise "most asked DSA" statistic — no verified source for those exists.
+66 drafts, or any company-wise "most asked DSA" statistic — no verified source for those exists.
 
 ## Next batch, in priority order
 
 1. **TREES → 4 more** (traversal variants, LCA): the largest remaining gap in a high-frequency topic.
 2. **DP → 3 more**, including one 2-D grid DP: DP is thin and only one Hard exists.
-3. **GRAPHS → 2 more** (BFS on a grid, topological order output): grids are the common interview
+3. **GRAPHS → 2 more** (BFS on a grid): grids are the common interview
    framing.
 4. **BITS → 2 more** (count set bits, single number): the topic with the least coverage relative to
    frequency in written rounds.
@@ -179,9 +181,9 @@ Each must arrive with a reference that passes, a mutant that fails, and a stamp 
 
 ## GO / NO-GO for Workstream A
 
-**GO for the 36 validated problems** as genuinely gradable, evidence-backed, and reviewed under a
+**GO for the 42 validated problems** as genuinely gradable, evidence-backed, and reviewed under a
 harness whose own boundary has been measured. Coverage is now broad enough to demo every topic.
 
 **NO-GO for marketing the bank as auto-gradable end to end**, and NO-GO for claiming interview
-readiness equal to a commercial platform: 78 drafts remain, Hard coverage is two problems, and the
+readiness equal to a commercial platform: 66 drafts remain, Hard coverage is three problems, and the
 in-app runner still cannot execute learner code.

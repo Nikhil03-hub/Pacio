@@ -133,3 +133,57 @@ limitation was the **query**, not the source: 193 named engineering colleges wit
 
 **Revised verdict: GO as a real, importable institution seed list (193 rows today, ~1,400 available).
 Still NO-GO as an authoritative or complete directory until state resolution and pagination are done.**
+
+
+---
+
+## Round 3 — the state-resolved population, audited on a deterministic sample (2026-10-25)
+
+Round 2's blocker was that no row carried a state. The query was extended with the administrative
+parent chain (`wdt:P131/wdt:P131*` restricted to `wd:Q12443800`, "state of India") and re-run with a
+1,500-row page.
+
+### Population
+
+| Measure | Value |
+|---|---|
+| Rows returned | 1,500 |
+| Passed the filters | 1,283 |
+| Excluded: no website and no identifier | 181 |
+| Excluded: department, not an institution | 20 |
+| Excluded: K-12 | 11 |
+| Excluded: outside scope / non-institution | 5 |
+| Duplicate rows collapsed | 262 |
+| **Distinct institutions available** | **1,021 across 27 states** |
+
+### Audit of a deterministic 250-row sample (qid-ordered, so it is reproducible)
+
+| Measure | Value |
+|---|---|
+| Rows imported | 250 |
+| States represented | 21 |
+| With an AISHE code | 111 (44%) |
+| With a website | 240 |
+| **Websites that resolved** | **163 (68%)** |
+| Dead or refused | 76 — 41 DNS, 14 connection refused, 10 HTTP 404, 3 HTTP 403, 3 HTTP 503, 3 unreachable, 1 each 500/522/530 |
+| Re-import | 0 new, 0 updated, **250 unchanged** |
+| Rollback | **250 deleted, 0 remaining**, disposable DB dropped |
+
+### What this settles
+
+The directory is real: **1,021 named Indian engineering colleges across 27 states**, one licence
+(CC0), one provenance chain per row (QID + retrieval timestamp + `unverified` status), and an import
+path that is idempotent and reversible on production-grade data rather than fixtures.
+
+Roughly **one third of the website links are dead**, which is the honest headline number and the
+reason the importer keeps `website_status` per row: the UI must show a link only when it is `ok`.
+
+### Still required before a customer sees it
+
+1. Paginate the remaining rows (1,403 counted, 1,021 usable) — the current page cap is 1,500.
+2. Re-check links on a schedule, not once at import.
+3. Join the 44% with AISHE codes against the official registry to catch renamed or closed colleges.
+4. The `unverified / community-maintained` label in the UI, and no implication of a relationship.
+
+**Round 3 verdict: the slice is genuinely useful as a labelled seed directory. It is still not a
+placement dataset, and it does not clear any institution to be shown as a Pacio customer.**

@@ -1,6 +1,7 @@
 # Phase 2 Decision — What Is Cleared, What Is Not
 
-> **Superseded in part on 2026-10-25:** DSA gradable coverage is now 36/108 (was 30) and the data
+> **Superseded in part on 2026-10-25:** DSA gradable coverage is now 42/108 (was 30 at this checkpoint)
+> and the data
 > position moved — see `PHASE3_PROGRESS_AND_DECISIONS.md`. The rights verdicts below still stand.
 
 One page for the owner. Evidence lives in `docs/data/`; every figure below is reproducible from the

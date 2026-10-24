@@ -298,6 +298,9 @@ export default function StudentDSA() {
                   <Badge variant="warning">UNSOLVED</Badge>
                 )}
               </div>
+              <p className="font-serif text-sm text-ink-800 leading-relaxed whitespace-pre-line">
+                {selectedQuestion.prompt || "No problem statement has been written for this entry yet."}
+              </p>
 
               <div className="border border-line-strong bg-bone-100/80 p-5 space-y-4" data-testid="dsa-coding-workspace">
                 <div className="flex items-center justify-between gap-3">

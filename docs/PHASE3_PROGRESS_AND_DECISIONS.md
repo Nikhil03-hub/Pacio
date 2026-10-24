@@ -10,7 +10,7 @@ BLOCKED / NOT RUN.
 | Branch / HEAD | `main` @ `1be1eb0` (Phase 2 final), clean tree at start |
 | Remote | `origin` = `https://github.com/Nikhil03-hub/pacio-intelligence.git`, upstream `origin/main` — **nothing pushed in this phase** |
 | Tests at start | 206 passed across 8 suites, frontend build clean |
-| DSA at start | 30 of 108 gradable (all twelve topics covered), 78 drafts, 2 Hard. **Now 36/108 after batch 4.** |
+| DSA at start | 30 of 108 gradable (all twelve topics covered), 78 drafts, 2 Hard. **Now 42/108 after batches 4-5.** |
 | Batch 4 | **not started** at Phase 3 beginning; launched during this phase |
 | Import pipeline | gated, undo pre-images, conflict-safe rollback; proven on memory + real MongoDB |
 | Cleared external data | none — three research passes found no institution/placement dataset with a usable licence |
@@ -25,7 +25,7 @@ Phase 2's own close-out was the honesty suite (5 → 6 tests), so the gate total
 |---|---|---|---|
 | A | Grading-honesty guarantee kept and pinned | VERIFIED | `test_dsa_grading_honesty.py` (6 tests); `_static_code_review` cannot mark solved |
 | A | Judge threat model + required controls | VERIFIED (design) | `DSA_GRADING_SECURITY_DESIGN.md`; implementation **NOT RUN** |
-| A | Batch 4 (3 trees + 3 bit problems) | VERIFIED | 36/108 gradable; 44 spec tests; validator `COMPLETE: 36 / INVALID: 0` |
+| A | Batches 4 and 5 (trees, bits, DP, topological order, trapping rain water) | VERIFIED | 42/108 gradable; 50 spec tests; validator `COMPLETE: 42 / INVALID: 0` |
 | B | Wikidata CC0 licence + fitness measured | VERIFIED | `WIKIDATA_FEASIBILITY.md` (2/8 spot-check pass, 57% links live) |
 | B | New dataset candidates scanned | VERIFIED (negative) | `PERMITTED_DATASET_SCAN.md` — no approved AICTE/AISHE/placement source |
 | B | OGD licence corrected in a browser | VERIFIED | `OGD_LICENCE_BROWSER_VERIFICATION.md` — GODL-India in the portal footer |
@@ -57,10 +57,10 @@ Phase 2's own close-out was the honesty suite (5 → 6 tests), so the gate total
 
 | Metric | Value |
 |---|---|
-| **Gate result now** | **212 passed, 0 failed**, every suite exit 0 (final run 2026-10-25) |
+| **Gate result now** | **218 passed, 0 failed**, every suite exit 0 (final run 2026-10-25, after batch 5) |
 | Commits added this phase | 6 (UI + API URL guard, CI + security design, data rights + Wikidata pilot, progress/coverage docs, truthfulness addenda, batch 4 + round 2 pilot) |
-| Gradable DSA problems | 36 of 108 (batch 4 merged: 3 trees + 3 bit problems) |
-| Validated specs with independent reviewer | 26 of 36 (the 10 earliest are self-reviewed and marked `pending`) |
+| Gradable DSA problems | 42 of 108 (batches 4-5; 3 Hard; DP 6/12) |
+| Validated specs with independent reviewer | 32 of 42 (the 10 earliest are self-reviewed and marked `pending`) |
 | Real external rows ever imported into the application DB | **0** |
 | Rows imported into disposable pilot DBs, then rolled back | **221 institutions** (28 + 193, Wikidata) and 18 job postings (Lever/Groww) |
 | Approved external sources | Wikidata (CC0, limited), Lever boards (conditional), three OSS curriculum repos (MIT/CC BY) |
@@ -68,11 +68,11 @@ Phase 2's own close-out was the honesty suite (5 → 6 tests), so the gate total
 
 ## 5. Open items and exact continuation point
 
-1. **Batch 4 — DONE** (36/108). A first agent produced nothing in two hours; a reduced-scope agent
-   delivered 6 specs, all hand-checked before merge. The next batch is DP (10 drafts) then the 8
-   remaining Hard problems.
-2. **`DSA_COVERAGE_AND_DIFFICULTY.md`** — written from the post-batch-4 data, with the 72 remaining
-   draft ids listed exactly.
+1. **Batches 4 and 5 — DONE** (42/108, 3 Hard). Every expected value was re-derived with an
+   independent oracle before merging, which caught a bug in my own checking script rather than in the
+   specs. Next: the remaining 7 Hard problems, then STACK/BINSEARCH Mediums.
+2. **`DSA_COVERAGE_AND_DIFFICULTY.md`** — regenerated from the catalogue after batch 5, with the 66
+   remaining draft ids listed exactly.
 3. **Authenticated browser journeys** — blocked on credentials. Options: add a read-only demo
    account whose password is safe to use in automation, or accept manual verification.
 4. **CI has never executed on GitHub** — every job was validated locally (YAML parse, the same

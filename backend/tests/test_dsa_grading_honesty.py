@@ -61,8 +61,8 @@ def test_question_list_reports_gradability_from_the_spec_file(client, student_to
     assert res.status_code == 200, res.text[:200]
     body = res.json()
     gradable = [row for row in body["questions"] if row["gradable"]]
-    assert len(gradable) == 36, "gradable must come from the harness, not from the seed"
-    assert body["gradable_total"] == 36
+    assert len(gradable) == 42, "gradable must come from the harness, not from the seed"
+    assert body["gradable_total"] == 42
     assert all(row["spec_status"] == "validated" for row in gradable)
     assert all(row["spec_status"] == "draft" for row in body["questions"] if not row["gradable"])
 
