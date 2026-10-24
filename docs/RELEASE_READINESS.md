@@ -17,11 +17,15 @@ MongoDB 8.2.1 on `127.0.0.1:27017`, no third-party API credentials.
 | Check | Command | Result |
 | --- | --- | --- |
 | Security/authorisation regressions | `pytest backend/tests/test_hardening.py -q` | **32 passed**, ~93 s |
-| Total | 32 + 20 + 3 + 73 | **128 passed, all four suites exit 0** |
+| DSA specification harness | `pytest backend/tests/test_dsa_specs.py -q` | **28 passed** |
+| DSA grading honesty | `pytest backend/tests/test_dsa_grading_honesty.py -q` | **5 passed** |
+| Data import pipeline | `pytest backend/tests/test_data_import.py -q` | **18 passed** |
+| Job feed adapters | `pytest backend/tests/test_job_feeds.py -q` | **16 passed** |
+| Total | 32 + 20 + 28 + 5 + 18 + 16 + 3 + 73 | **195 passed, every suite exit 0** (2026-10-24) |
 | Multi-tenant role matrix (Tenant A vs synthetic Tenant B) | `pytest backend/tests/test_tenant_isolation.py -q` | **20 passed**, ~102 s |
 | Real-MongoDB integration | `PACIO_TEST_MONGO_URL=mongodb://127.0.0.1:27017 pytest backend/tests/test_mongo_integration.py -q` | **3 passed**, ~18 s |
-| Legacy feature suites | `bash scripts/release_gate.sh` against a Mongo-backed server with `RATE_LIMIT_ENABLED=false` | **73 passed** (10 m 09 s), exit 0 |
-| Frontend production build | `cd frontend && REACT_APP_BACKEND_URL= CI=false npm run build` | compiled; 884 kB gzipped JS |
+| Legacy feature suites | `bash scripts/release_gate.sh` against a Mongo-backed server with `RATE_LIMIT_ENABLED=false` | **73 passed** (7 m 01 s), exit 0 |
+| Frontend production build | `cd frontend && REACT_APP_BACKEND_URL= CI=false npm run build` | compiled, exit 0; 885 kB gzipped JS |
 | Certificate verification page | served build, `/verify/ST-CRT-RC2026` | renders VALID with holder/program/institution; screenshot captured |
 | Login page (served build) | `http://127.0.0.1:8073/login` | renders; no stray markup in the top-left corner; screenshot captured |
 | No local backend URL in the bundle | grep of `build/static/js/main.*.js` | 0 occurrences of `localhost` or `127.0.0.1` |
@@ -116,7 +120,7 @@ determined from this machine. Treat these as owner checks:
 | Blocker | Status |
 | --- | --- |
 | Exposed credentials in public git history | **OPEN** — rotate at providers; decide history rewrite vs private repo |
-| DSA curriculum rights + validation | **PARTIAL (2026-10-23)** — the third-party sheet was replaced with an original 12-topic / 108-problem set (prompts authored here, coverage sources cited). Not yet cleared: 0/108 problems have executable specs/tests, and the compilation still needs legal review before sale |
+| DSA curriculum rights + validation | **PARTIAL (2026-10-24)** — 108 curated canonical problems under an in-house 12-topic taxonomy. **20/108 now have machine-validated gradable specs** (reference passes, mutant caught, harness-stamped; see `docs/data/DSA_VALIDATION_REPORT.md`); 88 remain prose drafts. Originality measured: 91/108 titles are standard industry names, prompt overlap 1/1,283 6-grams, and the word "original" was removed from the marketing copy. Graphs, heaps and backtracking have **zero** validated problems. The catalogue must not be advertised as auto-gradable |
 | Brand collision (`careeros.com`) | **OPEN** — owner naming decision |
 | Seeded data names real colleges with invented partnerships/payouts | **OPEN** — fictionalise or obtain permission |
 | No customer, pilot, LOI, tender or willingness-to-pay evidence | **OPEN** — the only sourced price in the category is one competitor's list price (₹25k–55k/month) |
@@ -129,4 +133,4 @@ determined from this machine. Treat these as owner checks:
 2. Prove one real email and one real Telegram message with provider ids.
 3. Rehearse an Atlas backup/restore and record the restored counts.
 4. Resolve or isolate the rights blockers above.
-5. Add CI so the 128 tests run on every change, and a browser-level journey suite.
+5. Add CI so the 195 tests run on every change, and a browser-level journey suite.
