@@ -1,0 +1,130 @@
+name: CI
+
+# Runs the checks that need no live server and no external credentials.
+# The legacy feature suites and scripts/release_gate.sh need a running API against MongoDB and are
+# run locally before a checkpoint; see docs/RELEASE_READINESS.md.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  hermetic-backend:
+    name: Hermetic backend suites
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      # Force the in-memory store. No job in this workflow may touch a real database.
+      MONGO_URL: ""
+      DB_NAME: pacio_test_memory
+      JWT_SECRET: ci-only-secret-not-used-anywhere
+      APP_ENV: development
+      DEFAULT_DEMO_PASSWORD: demo-password-for-tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install dependencies
+        run: pip install -r requirements.txt pytest
+      - name: Security, tenancy, DSA, import and job-feed suites
+        run: |
+          python -m pytest \
+            backend/tests/test_hardening.py \
+            backend/tests/test_tenant_isolation.py \
+            backend/tests/test_dsa_specs.py \
+            backend/tests/test_dsa_grading_honesty.py \
+            backend/tests/test_data_import.py \
+            backend/tests/test_job_feeds.py \
+            -q -p no:cacheprovider
+
+  dsa-spec-integrity:
+    name: DSA specs valid and counts consistent
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Every shipped spec must be COMPLETE
+        run: python scripts/validate_dsa_specs.py --csv "$RUNNER_TEMP/completion.csv"
+      - name: Gradability must match evidence, not a hand-maintained number
+        run: |
+          python - <<'PY'
+          import csv, os, sys
+          sys.path.insert(0, "backend")
+          from dsa_catalog import build_dsa_question_bank
+
+          bank = build_dsa_question_bank()
+          gradable = sum(1 for row in bank if row["gradable"])
+          rows = list(csv.DictReader(open(os.environ["RUNNER_TEMP"] + "/completion.csv",
+                                          encoding="utf-8")))
+          complete = sum(1 for row in rows if row["status"] == "COMPLETE")
+          invalid = [row["question_id"] for row in rows if row["status"] == "INVALID"]
+          assert not invalid, f"INVALID specs: {invalid}"
+          assert gradable == complete, (
+              f"the app reports {gradable} gradable problems but {complete} specs passed the harness")
+          print(f"consistent: {gradable} of {len(bank)} problems gradable, {len(rows)} rows checked")
+          PY
+
+  mongo-integration:
+    name: Real MongoDB integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      mongo:
+        image: mongo:7
+        ports: ["27017:27017"]
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ping:1})'"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+    env:
+      MONGO_URL: ""
+      JWT_SECRET: ci-only-secret-not-used-anywhere
+      PACIO_TEST_MONGO_URL: mongodb://127.0.0.1:27017
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt pytest
+      - run: python -m pytest backend/tests/test_mongo_integration.py -q -p no:cacheprovider
+
+  frontend:
+    name: Frontend build and bundle hygiene
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - name: Build
+        env:
+          CI: "false"
+          REACT_APP_BACKEND_URL: ""
+        run: npm run build
+      - name: No localhost URL may be baked into the bundle
+        run: |
+          if grep -RIn --include='*.js' -e '127\.0\.0\.1' -e 'localhost' build/static/js; then
+            echo "::error::a local backend URL leaked into the production bundle"
+            exit 1
+          fi
+          echo "bundle clean"
