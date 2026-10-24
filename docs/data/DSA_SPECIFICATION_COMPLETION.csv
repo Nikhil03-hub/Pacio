@@ -6,6 +6,9 @@ dsa_backtrack_005_palindrome-partitioning,Palindrome Partitioning,BACKTRACK,Medi
 dsa_backtrack_008_generate-parentheses,Generate Parentheses,BACKTRACK,Medium,unordered,7,True,True,COMPLETE,
 dsa_binsearch_001_binary-search,Binary Search,BINSEARCH,Easy,exact,5,True,True,COMPLETE,
 dsa_bits_001_single-number,Single Number,BITS,Easy,exact,5,True,True,COMPLETE,
+dsa_bits_002_number-of-1-bits,Number of 1 Bits,BITS,Easy,exact,9,True,True,COMPLETE,
+dsa_bits_003_counting-bits,Counting Bits,BITS,Easy,exact,9,True,True,COMPLETE,
+dsa_bits_004_missing-number,Missing Number,BITS,Easy,exact,10,True,True,COMPLETE,
 dsa_dp_001_climbing-stairs,Climbing Stairs,DP,Easy,exact,5,True,True,COMPLETE,
 dsa_dp_008_edit-distance,Edit Distance,DP,Hard,exact,9,True,True,COMPLETE,
 dsa_graphs_006_course-schedule,Course Schedule,GRAPHS,Medium,exact,9,True,True,COMPLETE,
@@ -26,7 +29,10 @@ dsa_pointers_004_container-with-most-water,Container With Most Water,POINTERS,Me
 dsa_pointers_006_longest-substring-without-repeating-characters,Longest Substring Without Repeating Characters,POINTERS,Medium,exact,5,True,True,COMPLETE,
 dsa_stack_001_valid-parentheses,Valid Parentheses,STACK,Easy,exact,6,True,True,COMPLETE,
 dsa_trees_001_maximum-depth-of-binary-tree,Maximum Depth of Binary Tree,TREES,Easy,exact,7,True,True,COMPLETE,
+dsa_trees_002_invert-binary-tree,Invert Binary Tree,TREES,Easy,exact,7,True,True,COMPLETE,
 dsa_trees_003_diameter-of-binary-tree,Diameter of Binary Tree,TREES,Easy,exact,7,True,True,COMPLETE,
+dsa_trees_004_balanced-binary-tree,Balanced Binary Tree,TREES,Easy,exact,9,True,True,COMPLETE,
+dsa_trees_005_same-tree,Same Tree,TREES,Easy,exact,9,True,True,COMPLETE,
 dsa_trees_006_binary-tree-level-order-traversal,Binary Tree Level Order Traversal,TREES,Medium,exact,7,True,True,COMPLETE,
 dsa_trees_009_validate-binary-search-tree,Validate Binary Search Tree,TREES,Medium,exact,9,True,True,COMPLETE,
 dsa_arrays_002_contains-duplicate,Contains Duplicate,ARRAYS,Easy,,0,False,False,DRAFT,no validated specification yet
@@ -51,9 +57,6 @@ dsa_binsearch_005_find-minimum-in-rotated-sorted-array,Find Minimum in Rotated S
 dsa_binsearch_006_koko-eating-bananas,Koko Eating Bananas,BINSEARCH,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_binsearch_007_capacity-to-ship-packages-within-d-days,Capacity to Ship Packages Within D Days,BINSEARCH,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_binsearch_008_median-of-two-sorted-arrays,Median of Two Sorted Arrays,BINSEARCH,Hard,,0,False,False,DRAFT,no validated specification yet
-dsa_bits_002_number-of-1-bits,Number of 1 Bits,BITS,Easy,,0,False,False,DRAFT,no validated specification yet
-dsa_bits_003_counting-bits,Counting Bits,BITS,Easy,,0,False,False,DRAFT,no validated specification yet
-dsa_bits_004_missing-number,Missing Number,BITS,Easy,,0,False,False,DRAFT,no validated specification yet
 dsa_bits_005_pow-x-n,"Pow(x, n)",BITS,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_bits_006_reverse-integer,Reverse Integer,BITS,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_dp_002_house-robber,House Robber,DP,Medium,,0,False,False,DRAFT,no validated specification yet
@@ -99,9 +102,6 @@ dsa_stack_005_next-greater-element,Next Greater Element,STACK,Medium,,0,False,Fa
 dsa_stack_006_largest-rectangle-in-histogram,Largest Rectangle in Histogram,STACK,Hard,,0,False,False,DRAFT,no validated specification yet
 dsa_stack_007_asteroid-collision,Asteroid Collision,STACK,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_stack_008_decode-string,Decode String,STACK,Medium,,0,False,False,DRAFT,no validated specification yet
-dsa_trees_002_invert-binary-tree,Invert Binary Tree,TREES,Easy,,0,False,False,DRAFT,no validated specification yet
-dsa_trees_004_balanced-binary-tree,Balanced Binary Tree,TREES,Easy,,0,False,False,DRAFT,no validated specification yet
-dsa_trees_005_same-tree,Same Tree,TREES,Easy,,0,False,False,DRAFT,no validated specification yet
 dsa_trees_007_binary-tree-right-side-view,Binary Tree Right Side View,TREES,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_trees_008_lowest-common-ancestor-of-a-bst,Lowest Common Ancestor of a BST,TREES,Easy,,0,False,False,DRAFT,no validated specification yet
 dsa_trees_010_kth-smallest-element-in-a-bst,Kth Smallest Element in a BST,TREES,Medium,,0,False,False,DRAFT,no validated specification yet

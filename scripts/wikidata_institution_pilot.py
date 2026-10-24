@@ -80,6 +80,35 @@ def _labels(row: dict, field: str) -> list[str]:
     return [item.get("label", "") for item in (row.get(field) or []) if isinstance(item, dict)]
 
 
+def from_sparql_bindings(payload: dict) -> list[dict]:
+    """Accept a raw SPARQL JSON response so a targeted query is a first-class input."""
+    rows = []
+    for binding in payload["results"]["bindings"]:
+        def value(key):
+            return binding.get(key, {}).get("value")
+
+        qid_uri = value("item")
+        if not qid_uri:
+            continue
+        qid = qid_uri.rsplit("/", 1)[-1]
+        rows.append({
+            "qid": qid,
+            "wikidata_url": f"https://www.wikidata.org/wiki/{qid}",
+            "label_en": value("itemLabel"),
+            "description_en": None,
+            "instance_of": [{"id": "", "label": part} for part in (value("types") or "").split("|") if part],
+            "official_website": [value("website")] if value("website") else [],
+            "located_in_admin": ([{"id": "", "label": value("adminLabel")}] if value("adminLabel") else []),
+            "country": [{"id": "Q668", "label": "India"}],
+            "inception": [value("inception")] if value("inception") else [],
+            "aishe_code": [value("aishe")] if value("aishe") else [],
+            "aicte_permanent_id": [value("aictePerm")] if value("aictePerm") else [],
+            "aicte_application_id": [value("aicteApp")] if value("aicteApp") else [],
+            "state_resolved": None,
+        })
+    return rows
+
+
 def classify(row: dict) -> tuple[str, str]:
     """Return (decision, reason). Decision is keep | exclude."""
     types = {label.lower() for label in _labels(row, "instance_of")}
@@ -175,11 +204,14 @@ async def main() -> int:
     parser.add_argument("--db-name", default="pacio_dryrun_wikidata")
     parser.add_argument("--check-links", action="store_true")
     parser.add_argument("--link-delay", type=float, default=0.4)
+    parser.add_argument("--source-file", default=str(SAMPLE),
+                        help="Wikidata sample JSON or a raw SPARQL JSON response")
     parser.add_argument("--keep", action="store_true")
     args = parser.parse_args()
 
-    payload = json.loads(SAMPLE.read_text(encoding="utf-8"))
-    rows = payload["institutions"]
+    payload = json.loads(Path(args.source_file).read_text(encoding="utf-8"))
+    rows = (from_sparql_bindings(payload) if "results" in payload
+            else payload["institutions"])
     retrieved_at = datetime.now(timezone.utc).isoformat()
 
     decisions = {"keep": [], "exclude": []}

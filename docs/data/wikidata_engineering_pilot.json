@@ -1,0 +1,123 @@
+{
+  "engine": "mongodb (disposable db 'pacio_dryrun_wikidata')",
+  "source": "SRC-WIKIDATA",
+  "sampled_rows": 300,
+  "kept_after_filters": 260,
+  "excluded": 40,
+  "exclusion_reasons": {
+    "no website and no education identifier": 35,
+    "K-12 school, not higher education": 4,
+    "department, not a standalone institution": 1
+  },
+  "dedupe_dropped": 67,
+  "final_rows": 193,
+  "dry_run": {
+    "new": 193,
+    "updated": 0,
+    "unchanged": 0,
+    "invalid": [],
+    "total": 193
+  },
+  "first_import": {
+    "new": 193,
+    "updated": 0,
+    "unchanged": 0
+  },
+  "second_import": {
+    "new": 0,
+    "updated": 0,
+    "unchanged": 193
+  },
+  "stored_before_rollback": 193,
+  "website_states": {
+    "ok": 139,
+    "connection_failed": 10,
+    "dns_or_connection": 25,
+    "http_500": 1,
+    "http_403": 5,
+    "not_checked": 5,
+    "http_404": 5,
+    "http_523": 1,
+    "unreachable": 2
+  },
+  "rows_with_aishe_code": 93,
+  "rows_with_website": 188,
+  "states_covered": 0,
+  "sample_rows": [
+    {
+      "name": "Government Engineering College, Patan",
+      "city": "Patan district",
+      "state": "",
+      "website_status": "ok",
+      "data_status": "unverified",
+      "trust_level": "community-maintained"
+    },
+    {
+      "name": "Government Engineering College, Wayanad",
+      "city": "Kerala",
+      "state": "",
+      "website_status": "ok",
+      "data_status": "unverified",
+      "trust_level": "community-maintained"
+    },
+    {
+      "name": "Government Engineering College, Sreekrishnapuram",
+      "city": "Palakkad",
+      "state": "",
+      "website_status": "ok",
+      "data_status": "unverified",
+      "trust_level": "community-maintained"
+    },
+    {
+      "name": "Government Engineering College Bikaner",
+      "city": "Bikaner district",
+      "state": "",
+      "website_status": "ok",
+      "data_status": "unverified",
+      "trust_level": "community-maintained"
+    },
+    {
+      "name": "Government Engineering College, Thrissur",
+      "city": "Thrissur district",
+      "state": "",
+      "website_status": "connection_failed",
+      "data_status": "unverified",
+      "trust_level": "community-maintained"
+    },
+    {
+      "name": "Government Engineering College, Trivandrum",
+      "city": "Thiruvananthapuram district",
+      "state": "",
+      "website_status": "ok",
+      "data_status": "unverified",
+      "trust_level": "community-maintained"
+    },
+    {
+      "name": "Government Mahila Engineering College",
+      "city": "Ajmer",
+      "state": "",
+      "website_status": "ok",
+      "data_status": "unverified",
+      "trust_level": "community-maintained"
+    },
+    {
+      "name": "Government Polytechnic, Khutri",
+      "city": "Jharkhand",
+      "state": "",
+      "website_status": "ok",
+      "data_status": "unverified",
+      "trust_level": "community-maintained"
+    }
+  ],
+  "rollback": {
+    "batch_id": "imp_20261024T193129Z_SRC-WIKIDATA_e6bc34",
+    "collection": "institutions_public",
+    "status": "rolled_back",
+    "forced": false,
+    "deleted": 193,
+    "restored": 0,
+    "undo_items": 193
+  },
+  "rows_after_rollback": 0,
+  "cleanup": "dropped"
+}

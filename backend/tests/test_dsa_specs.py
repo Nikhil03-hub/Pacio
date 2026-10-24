@@ -101,13 +101,13 @@ def test_corrupt_spec_file_fails_loudly_instead_of_demoting_the_bank(tmp_path):
 
 def test_shipped_specs_are_all_stamped_and_gradable():
     bank = {row["question_id"]: row for row in C.build_dsa_question_bank()}
-    assert len(SPECS) == 30
+    assert len(SPECS) == 36
     for spec in SPECS:
         row = bank[spec["question_id"]]
         assert row["gradable"] is True and row["spec_status"] == "validated"
         assert spec["verification"]["harness"] == C.DSA_HARNESS_VERSION
     ungraded = [qid for qid, row in bank.items() if not row["gradable"]]
-    assert len(ungraded) == 78, "the product must not imply the full bank is gradable"
+    assert len(ungraded) == 72, "the product must not imply the full bank is gradable"
 
 
 def test_untested_catalogue_entries_remain_drafts():

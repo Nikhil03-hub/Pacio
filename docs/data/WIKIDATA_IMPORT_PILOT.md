@@ -85,3 +85,51 @@ the single most important number here: the name/city/state fields are usable, th
 
 **Verdict: GO as a pipeline proof and a labelled demo slice. NO-GO as a shippable, authoritative
 institution directory.**
+
+
+---
+
+## Round 2 — the targeted engineering query (2026-10-25)
+
+Round 1 used a generic "college in India" sample and yielded 9.3%. The recommendation was to query
+for engineering institutions specifically. That was done, and the difference is the whole point.
+
+Query (SPARQL, `https://query.wikidata.org/sparql`, 2026-10-25) — `?item wdt:P31/wdt:P279* wd:Q1663017`
+("engineering school") and `wdt:P17 wd:Q668`, with P856 / P131 / P571 / P6392 / P6513 / P4897 optional:
+
+> **Total matching institutions: 1,403.** First page fetched: 300 rows.
+
+| Metric | Round 1 (generic) | Round 2 (targeted) |
+|---|---|---|
+| Rows fetched | 300 | 300 |
+| Passed the filters | 28 (9.3%) | **260 (87%)** |
+| Duplicates collapsed | 0 | 67 (same QID across multi-valued rows) |
+| **Distinct institutions imported** | 28 | **193** |
+| With a website | 24 | 188 |
+| Websites that resolved live | 16 (67%) | **139 (74%)** |
+| With an AISHE code | 19 | 93 (48%) |
+| States resolved | 9 | **0 — the query did not fetch the state chain** |
+| Re-import | 28 unchanged | **193 unchanged** |
+| Rollback | 28 deleted, 0 left | **193 deleted, 0 left**, disposable DB dropped |
+
+Link failures were classified rather than hidden: 25 DNS/connection failures, 10 connection refused,
+5 HTTP 403, 5 HTTP 404, 1 HTTP 500, 1 HTTP 523, 2 unreachable, 5 with no URL at all.
+
+### What this changes
+
+`WIKIDATA_IMPORT_PILOT.md` round 1 concluded "a pipeline proof, not a directory". Round 2 shows the
+limitation was the **query**, not the source: 193 named engineering colleges with 74% live websites,
+48% carrying an AISHE code that can later be joined to official records, from a pool of 1,403.
+
+### What is still required before this is shown to a customer
+
+1. **Resolve state.** The round-2 query omitted the administrative parent chain, so no row has a
+   state. A placement cell filters by state, so this is a blocker for UI use, not a cosmetic gap.
+2. **Paginate past 300** to cover the 1,403, keeping the same filters.
+3. **Keep the liveness check in the importer** — 26% of URLs are already dead or erroring.
+4. **Label every row** `unverified / community-maintained`, and show a website only when
+   `website_status == "ok"`.
+5. Do not imply a relationship: appearing in this list means Wikidata has an article, nothing more.
+
+**Revised verdict: GO as a real, importable institution seed list (193 rows today, ~1,400 available).
+Still NO-GO as an authoritative or complete directory until state resolution and pagination are done.**

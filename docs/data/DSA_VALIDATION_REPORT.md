@@ -1,16 +1,17 @@
 # DSA Validation Report
 
-Phase 2, Workstream A deliverable #2. Written 2026-10-24, updated after batch 3.
+Phase 2/3, Workstream A deliverable #2. Written 2026-10-24; updated 2026-10-25 after batch 4
+(trees and bit manipulation).
 
 ```
 .venv/Scripts/python.exe scripts/validate_dsa_specs.py
-  -> specs supplied: 30 | COMPLETE: 30 | INVALID: 0 | DRAFT: 78        exit 0
+  -> specs supplied: 36 | COMPLETE: 36 | INVALID: 0 | DRAFT: 72        exit 0
 .venv/Scripts/python.exe -m pytest backend/tests/test_dsa_specs.py -q
-  -> 38 passed
+  -> 44 passed
 .venv/Scripts/python.exe -m pytest backend/tests/test_dsa_grading_honesty.py -q
   -> 6 passed
 .venv/Scripts/python.exe -c "…build_dsa_question_bank()…"
-  -> rows 108 | validated 30 | draft 78 | gradable 30
+  -> rows 108 | validated 36 | draft 72 | gradable 36
 ```
 
 Machine-readable per-problem state: `DSA_SPECIFICATION_COMPLETION.csv`.
@@ -20,8 +21,8 @@ External originality measurement: `DSA_ORIGINALITY_CHECK.md`.
 ## Where it started and where it is
 
 At the end of Phase 1 the honest figure was **0 of 108 gradable** — the catalogue was prose only.
-Three batches later it is **30 of 108**, every one machine-verified, and for the first time all
-twelve topics contain at least one gradable problem. The count rose only by making problems
+Four batches later it is **36 of 108**, every one machine-verified, with all twelve topics covered
+and trees and bit manipulation now substantially validated. The count rose only by making problems
 genuinely testable; nothing was re-labelled to look better.
 
 ## What "validated" means, and what changed under it
@@ -54,7 +55,7 @@ mutant accidentally passes is INVALID — the tests must have teeth.
 | Topic | Validated | Total | Gap |
 |---|---|---|---|
 | LINKED | 7 | 8 | 1 |
-| TREES | 4 | 12 | 8 |
+| TREES | 7 | 12 | 5 |
 | **GRAPHS** | **4** | 10 | 6 |
 | **BACKTRACK** | **3** | 8 | 5 |
 | **HEAPS** | **2** | 6 | 4 |
@@ -64,23 +65,24 @@ mutant accidentally passes is INVALID — the tests must have teeth.
 | BINSEARCH | 1 | 8 | 7 |
 | STACK | 1 | 8 | 7 |
 | GREEDY | 1 | 8 | 7 |
-| BITS | 1 | 6 | 5 |
-| **Total** | **30** | 108 | 78 |
+| BITS | 4 | 6 | 2 |
+| **Total** | **36** | 108 | 72 |
 
-Batch 3 (10 specs, all lead-reviewed) closed the exact gap the audit called a blocker:
+Batch 4 (6 specs — invert / same-tree / balanced binary tree, number-of-1-bits, counting-bits,
+missing-number) deepened the two topics a student meets first. Batch 3 (10 specs, all lead-reviewed)
+closed the exact gap the audit called a blocker:
 `kth-largest-element`, `top-k-frequent-elements` (HEAPS); `course-schedule`,
 `number-of-connected-components`, `network-delay-time`, `word-ladder` (GRAPHS);
 `subsets`, `generate-parentheses`, `palindrome-partitioning` (BACKTRACK); `edit-distance` (DP).
 
-**Review independence is uneven.** 20 of the 30 specs were authored by a subagent and reviewed by the lead (author ≠ reviewer). The first 10 were authored and reviewed by the same agent and still carry `reviewer: "pending"` — they are machine-validated but not independently reviewed, and that is recorded rather than papered over.
+**Review independence is uneven.** 26 of the 36 specs were authored by a subagent and reviewed by the lead (author ≠ reviewer). The first 10 were authored and reviewed by the same agent and still carry `reviewer: "pending"` — they are machine-validated but not independently reviewed, and that is recorded rather than papered over.
 
-Difficulty of the 30: **10 Easy, 18 Medium, 2 Hard** (`word-ladder`, `edit-distance`). The bank is
+Difficulty of the 36: **16 Easy, 18 Medium, 2 Hard** (`word-ladder`, `edit-distance`). The bank is
 no longer Hard-free, though two is still thin for a "crack a product company" claim.
 
-Hidden tests per spec: 4 (9 specs), 5 (7), 6 (8), 7 (5), 8 (1). Examples: 2 for 20 specs, 1 for the
-first 10. Edge cases ≥3 everywhere.
+Hidden tests per spec: 4 (9), 5 (8), 6 (8), 7 (9), 8 (2). Examples: 2 for 26 specs, 1 for the first 10. Edge cases ≥3 everywhere.
 
-Checkers: `exact` 26, `unordered` 3, `nested_unordered` 1. The previously untested checker paths are
+Checkers: `exact` 32, `unordered` 3, `nested_unordered` 1. The previously untested checker paths are
 now both exercised by real content **and** unit-tested (`test_every_shipped_checker_is_exercised`).
 
 ## Defects found and fixed (all with tests)
@@ -156,7 +158,7 @@ would have made the count 31 and the claim false.
 
 ## What may be said about DSA today
 
-Allowed: "108 curated canonical problems across 12 patterns; **30 are auto-gradable and machine
+Allowed: "108 curated canonical problems across 12 patterns; **36 are auto-gradable and machine
 verified**, including graphs, heaps, backtracking and two Hard problems; the rest are practice
 prompts with solutions and rationale."
 
@@ -177,7 +179,7 @@ Each must arrive with a reference that passes, a mutant that fails, and a stamp 
 
 ## GO / NO-GO for Workstream A
 
-**GO for the 30 validated problems** as genuinely gradable, evidence-backed, and reviewed under a
+**GO for the 36 validated problems** as genuinely gradable, evidence-backed, and reviewed under a
 harness whose own boundary has been measured. Coverage is now broad enough to demo every topic.
 
 **NO-GO for marketing the bank as auto-gradable end to end**, and NO-GO for claiming interview

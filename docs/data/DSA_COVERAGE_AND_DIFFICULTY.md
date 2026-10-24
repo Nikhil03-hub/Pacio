@@ -1,7 +1,7 @@
 # DSA Coverage and Difficulty
 
 Phase 3 deliverable. Generated 2026-10-24 from `backend/dsa_catalog.py` + `backend/dsa_specs.json`
-(after batch 3; batch 4 pending). Every count below is reproducible with
+(after batch 4, 2026-10-25). Every count below is reproducible with
 `build_dsa_question_bank()` and is asserted in CI against the harness CSV.
 
 ## 1. Current gradable coverage
@@ -9,7 +9,7 @@ Phase 3 deliverable. Generated 2026-10-24 from `backend/dsa_catalog.py` + `backe
 | Topic | Gradable / total | Easy | Medium | Hard |
 |---|---|---|---|---|
 | LINKED | 7 / 8 | 3 | 4 | 0 |
-| TREES | 4 / 12 | 0 | 3 | 1 |
+| TREES | 7 / 12 | 5 | 2 | 0 |
 | GRAPHS | 4 / 10 | 0 | 4 | 0 |
 | BACKTRACK | 3 / 8 | 0 | 3 | 0 |
 | HEAPS | 2 / 6 | 0 | 2 | 0 |
@@ -19,11 +19,13 @@ Phase 3 deliverable. Generated 2026-10-24 from `backend/dsa_catalog.py` + `backe
 | BINSEARCH | 1 / 8 | 0 | 0 | 1 |
 | STACK | 1 / 8 | 1 | 0 | 0 |
 | GREEDY | 1 / 8 | 0 | 1 | 0 |
-| BITS | 1 / 6 | 1 | 0 | 0 |
-| **Total** | **30 / 108** | **10** | **18** | **2** |
+| BITS | 4 / 6 | 4 | 0 | 0 |
+| **Total** | **36 / 108** | **16** | **18** | **2** |
 
-Difficulty of the whole bank: 23 Easy / 75 Medium / 10 Hard. So gradable coverage is skewed **Easy**
-(10 of 23 Easy are gradable, 43%) while Medium is 18 of 75 (24%) and Hard only 2 of 10 (20%).
+Difficulty of the whole bank: 23 Easy / 75 Medium / 10 Hard. Gradable coverage is now **heavily
+weighted to Easy** — 16 of 23 Easy (70%) are gradable, against 18 of 75 Medium (24%) and 2 of 10 Hard
+(20%). That is the right order for building a verified bank, but it means an advanced student still has
+almost nothing to be graded on.
 
 ## 2. What that means for a placement cell
 
@@ -46,11 +48,11 @@ Difficulty of the whole bank: 23 Easy / 75 Medium / 10 Hard. So gradable coverag
 | Matrix / grid | `spiral-matrix`, `set-matrix-zeroes`, `unique-paths`, `number-of-islands` exist but none are gradable yet — grids are the most common interview framing. |
 | Union-find | `number-of-connected-components` is gradable via DFS; no problem forces a disjoint-set implementation. |
 | Topological **output** | `course-schedule` (cycle detection) is gradable; `course-schedule-ii` (ordering) is not. |
-| Bit manipulation | One gradable problem; `number-of-1-bits`, `counting-bits` and `missing-number` are classic written-round questions and sit unvalidated. |
+| Bit manipulation | Now 4 of 6 gradable, including the three written-round classics; `pow(x,n)` and `reverse-integer` remain. |
 | 2-D DP | No gradable 2-D DP. `unique-paths` and `longest-common-subsequence` are drafts. |
 | Design / stateful | No LRU, LFU, min-stack or iterator — `min-stack` is a draft and would need an operation-sequence harness. |
 
-## 4. The 78 remaining drafts, exactly
+## 4. The 72 remaining drafts, exactly
 
 IDs are the stable catalogue ids; spec them in this order (see §5).
 
@@ -83,11 +85,10 @@ STACK (7)
 LINKED (1)
   dsa_linked_008_copy-list-with-random-pointer M   [BLOCKED - not gradable in this harness]
 
-TREES (8)
-  dsa_trees_002_invert-binary-tree             E   dsa_trees_008_lowest-common-ancestor-of-a-bst E
-  dsa_trees_004_balanced-binary-tree           E   dsa_trees_010_kth-smallest-element-in-a-bst M
-  dsa_trees_005_same-tree                      E   dsa_trees_011_construct-binary-tree-from-preorder-and-inorder M
-  dsa_trees_007_binary-tree-right-side-view    M   dsa_trees_012_serialize-and-deserialize-binary-tree H
+TREES (5)
+  dsa_trees_007_binary-tree-right-side-view    M   dsa_trees_011_construct-binary-tree-from-preorder-and-inorder M
+  dsa_trees_008_lowest-common-ancestor-of-a-bst E  dsa_trees_012_serialize-and-deserialize-binary-tree H
+  dsa_trees_010_kth-smallest-element-in-a-bst  M
 
 HEAPS (4)
   dsa_heaps_003_k-closest-points-to-origin     M   dsa_heaps_005_find-median-from-data-stream H
@@ -118,19 +119,23 @@ GREEDY (7)
   dsa_greedy_004_meeting-rooms-ii              M   dsa_greedy_008_partition-labels            M
   dsa_greedy_005_jump-game                     M
 
-BITS (5)
-  dsa_bits_002_number-of-1-bits                E   dsa_bits_005_pow-x-n                       M
-  dsa_bits_003_counting-bits                   E   dsa_bits_006_reverse-integer               M
-  dsa_bits_004_missing-number                  E
+BITS (2)
+  dsa_bits_005_pow-x-n                         M   dsa_bits_006_reverse-integer               M
 ```
 
-(78 listed; `dsa_dp_008_edit-distance` is shown only to mark that DP already has one validated Hard.)
+(72 listed; `dsa_dp_008_edit-distance` is shown only to mark that DP already has one validated Hard.)
 
 ## 5. Recommended order for the next batches
 
-1. **TREES (8)** — largest gap in a high-frequency topic; 3 are Easy and cheap to validate, and
-   `serialize-and-deserialize` would add a third Hard.
-2. **BITS (5)** — 3 Easy classics, high value in written rounds, tidy single-integer interfaces.
+Batch 4 (3 trees + 3 bits) is done. Next, in this order:
+
+1. **DP (10)** — the largest remaining block and the weakest area for a serious candidate.
+   `unique-paths` gives the bank its first gradable 2-D DP; `house-robber`, `coin-change` and
+   `longest-common-subsequence` are the standard on-ramps.
+2. **HARD problems (8 of the 10 remain)** — `trapping-rain-water`, `minimum-window-substring`,
+   `largest-rectangle-in-histogram`, `merge-k-sorted-lists`, `find-median-from-data-stream`,
+   `serialize-and-deserialize-binary-tree`, `n-queens`, `median-of-two-sorted-arrays`. Hard coverage is
+   the biggest credibility gap for product-company screening.
 3. **DP (10)** — `unique-paths` gives the bank its first gradable 2-D DP; `house-robber` and
    `coin-change` are the standard on-ramps.
 4. **ARRAYS (10)** — Easy ones first; `spiral-matrix` and `set-matrix-zeroes` need explicit

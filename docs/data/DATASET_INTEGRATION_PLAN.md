@@ -89,3 +89,33 @@ Every batch stores `import_batch_id`, source, operator, counts, failures and the
 - Staging import + integrity report.
 - Acceptance checklist re-run.
 - Only then a production migration plan with backup and rollback.
+
+
+---
+
+## Phase 3 addendum (2026-10-25) — what the plan looks like now that a slice has been imported
+
+This document plus `DATASET_MIGRATION_AND_ROLLBACK_PLAN.md together satisfy the Phase 3
+"integration and rollback plan" deliverable; no third file is created.
+
+**One gate has actually been walked end to end.** The Wikidata pilot went: rights check (CC0) →
+sample → filter with per-row exclusion reasons → dedupe → link health → dry-run → import → idempotent
+re-import → rollback to zero, on a disposable MongoDB. Result: 28 institutions from a 300-row sample,
+all stored `data_status: unverified`. Details in `WIKIDATA_IMPORT_PILOT.md`.
+
+**Revised sequence for the first production-grade import:**
+
+1. Rights: source registered `APPROVED` or `APPROVED_WITH_LIMITATIONS` with the licence text quoted
+   and dated. Done for Wikidata; **not** done for any institution/placement source.
+2. Fitness: filter + measure, with exclusions recorded per row, not silently dropped. Done once.
+3. Field mapping into the `institutions` domain contract, with `stable_key` and provenance on every
+   row. Done for Wikidata; placement and jobs contracts exist but have no approved source.
+4. Import into **staging** (the owner's Atlas), not the development database, with a pre-import
+   backup taken by `scripts/mongo_backup_restore.py` and a rollback rehearsed on the same snapshot.
+   NOT RUN — blocked on the owner creating staging.
+5. Only then dashboards read the new collection, and only after the `data_status` badge in §UI ships.
+
+**What changed in my earlier thinking:** the plan assumed the blocker was pipeline work. The pilot
+proved the pipeline is adequate and the blockers are (a) rights for institution/placement data and
+(b) the absence of a staging database. Writing more pipeline code before those are resolved would be
+the wrong use of the next session.
