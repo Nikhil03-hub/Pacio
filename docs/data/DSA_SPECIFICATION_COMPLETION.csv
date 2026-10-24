@@ -1,10 +1,20 @@
 question_id,title,topic,difficulty,checker,cases,reference_pass,mutant_rejected,status,errors
 dsa_arrays_001_two-sum,Two Sum,ARRAYS,Easy,exact,5,True,True,COMPLETE,
 dsa_arrays_005_maximum-subarray,Maximum Subarray,ARRAYS,Medium,exact,5,True,True,COMPLETE,
+dsa_backtrack_001_subsets,Subsets,BACKTRACK,Medium,nested_unordered,7,True,True,COMPLETE,
+dsa_backtrack_005_palindrome-partitioning,Palindrome Partitioning,BACKTRACK,Medium,unordered,7,True,True,COMPLETE,
+dsa_backtrack_008_generate-parentheses,Generate Parentheses,BACKTRACK,Medium,unordered,7,True,True,COMPLETE,
 dsa_binsearch_001_binary-search,Binary Search,BINSEARCH,Easy,exact,5,True,True,COMPLETE,
 dsa_bits_001_single-number,Single Number,BITS,Easy,exact,5,True,True,COMPLETE,
 dsa_dp_001_climbing-stairs,Climbing Stairs,DP,Easy,exact,5,True,True,COMPLETE,
+dsa_dp_008_edit-distance,Edit Distance,DP,Hard,exact,9,True,True,COMPLETE,
+dsa_graphs_006_course-schedule,Course Schedule,GRAPHS,Medium,exact,9,True,True,COMPLETE,
+dsa_graphs_008_number-of-connected-components,Number of Connected Components,GRAPHS,Medium,exact,8,True,True,COMPLETE,
+dsa_graphs_009_word-ladder,Word Ladder,GRAPHS,Hard,exact,10,True,True,COMPLETE,
+dsa_graphs_010_network-delay-time,Network Delay Time,GRAPHS,Medium,exact,8,True,True,COMPLETE,
 dsa_greedy_001_merge-intervals,Merge Intervals,GREEDY,Medium,exact,5,True,True,COMPLETE,
+dsa_heaps_001_kth-largest-element-in-an-array,Kth Largest Element in an Array,HEAPS,Medium,exact,8,True,True,COMPLETE,
+dsa_heaps_002_top-k-frequent-elements,Top K Frequent Elements,HEAPS,Medium,unordered,8,True,True,COMPLETE,
 dsa_linked_001_reverse-linked-list,Reverse Linked List,LINKED,Easy,exact,5,True,True,COMPLETE,
 dsa_linked_002_merge-two-sorted-lists,Merge Two Sorted Lists,LINKED,Easy,exact,8,True,True,COMPLETE,
 dsa_linked_003_reorder-list,Reorder List,LINKED,Medium,exact,9,True,True,COMPLETE,
@@ -29,14 +39,11 @@ dsa_arrays_009_merge-sorted-array,Merge Sorted Array,ARRAYS,Easy,,0,False,False,
 dsa_arrays_010_find-all-duplicates-in-an-array,Find All Duplicates in an Array,ARRAYS,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_arrays_011_set-matrix-zeroes,Set Matrix Zeroes,ARRAYS,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_arrays_012_spiral-matrix,Spiral Matrix,ARRAYS,Medium,,0,False,False,DRAFT,no validated specification yet
-dsa_backtrack_001_subsets,Subsets,BACKTRACK,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_backtrack_002_combination-sum,Combination Sum,BACKTRACK,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_backtrack_003_permutations,Permutations,BACKTRACK,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_backtrack_004_word-search,Word Search,BACKTRACK,Medium,,0,False,False,DRAFT,no validated specification yet
-dsa_backtrack_005_palindrome-partitioning,Palindrome Partitioning,BACKTRACK,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_backtrack_006_n-queens,N-Queens,BACKTRACK,Hard,,0,False,False,DRAFT,no validated specification yet
 dsa_backtrack_007_letter-combinations-of-a-phone-number,Letter Combinations of a Phone Number,BACKTRACK,Medium,,0,False,False,DRAFT,no validated specification yet
-dsa_backtrack_008_generate-parentheses,Generate Parentheses,BACKTRACK,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_binsearch_002_search-insert-position,Search Insert Position,BINSEARCH,Easy,,0,False,False,DRAFT,no validated specification yet
 dsa_binsearch_003_first-and-last-position-of-a-target,First and Last Position of a Target,BINSEARCH,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_binsearch_004_search-in-rotated-sorted-array,Search in Rotated Sorted Array,BINSEARCH,Medium,,0,False,False,DRAFT,no validated specification yet
@@ -55,7 +62,6 @@ dsa_dp_004_coin-change,Coin Change,DP,Medium,,0,False,False,DRAFT,no validated s
 dsa_dp_005_longest-increasing-subsequence,Longest Increasing Subsequence,DP,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_dp_006_word-break,Word Break,DP,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_dp_007_longest-common-subsequence,Longest Common Subsequence,DP,Medium,,0,False,False,DRAFT,no validated specification yet
-dsa_dp_008_edit-distance,Edit Distance,DP,Hard,,0,False,False,DRAFT,no validated specification yet
 dsa_dp_009_partition-equal-subset-sum,Partition Equal Subset Sum,DP,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_dp_010_unique-paths,Unique Paths,DP,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_dp_011_decode-ways,Decode Ways,DP,Medium,,0,False,False,DRAFT,no validated specification yet
@@ -65,11 +71,7 @@ dsa_graphs_002_clone-graph,Clone Graph,GRAPHS,Medium,,0,False,False,DRAFT,no val
 dsa_graphs_003_max-area-of-island,Max Area of Island,GRAPHS,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_graphs_004_rotting-oranges,Rotting Oranges,GRAPHS,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_graphs_005_pacific-atlantic-water-flow,Pacific Atlantic Water Flow,GRAPHS,Medium,,0,False,False,DRAFT,no validated specification yet
-dsa_graphs_006_course-schedule,Course Schedule,GRAPHS,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_graphs_007_course-schedule-ii,Course Schedule II,GRAPHS,Medium,,0,False,False,DRAFT,no validated specification yet
-dsa_graphs_008_number-of-connected-components,Number of Connected Components,GRAPHS,Medium,,0,False,False,DRAFT,no validated specification yet
-dsa_graphs_009_word-ladder,Word Ladder,GRAPHS,Hard,,0,False,False,DRAFT,no validated specification yet
-dsa_graphs_010_network-delay-time,Network Delay Time,GRAPHS,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_greedy_002_insert-interval,Insert Interval,GREEDY,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_greedy_003_non-overlapping-intervals,Non-overlapping Intervals,GREEDY,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_greedy_004_meeting-rooms-ii,Meeting Rooms II,GREEDY,Medium,,0,False,False,DRAFT,no validated specification yet
@@ -77,8 +79,6 @@ dsa_greedy_005_jump-game,Jump Game,GREEDY,Medium,,0,False,False,DRAFT,no validat
 dsa_greedy_006_jump-game-ii,Jump Game II,GREEDY,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_greedy_007_gas-station,Gas Station,GREEDY,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_greedy_008_partition-labels,Partition Labels,GREEDY,Medium,,0,False,False,DRAFT,no validated specification yet
-dsa_heaps_001_kth-largest-element-in-an-array,Kth Largest Element in an Array,HEAPS,Medium,,0,False,False,DRAFT,no validated specification yet
-dsa_heaps_002_top-k-frequent-elements,Top K Frequent Elements,HEAPS,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_heaps_003_k-closest-points-to-origin,K Closest Points to Origin,HEAPS,Medium,,0,False,False,DRAFT,no validated specification yet
 dsa_heaps_004_merge-k-sorted-lists,Merge K Sorted Lists,HEAPS,Hard,,0,False,False,DRAFT,no validated specification yet
 dsa_heaps_005_find-median-from-data-stream,Find Median from Data Stream,HEAPS,Hard,,0,False,False,DRAFT,no validated specification yet

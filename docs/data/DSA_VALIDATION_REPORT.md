@@ -1,14 +1,16 @@
 # DSA Validation Report
 
-Phase 2, Workstream A deliverable #2. Written 2026-10-24 by the lead agent.
+Phase 2, Workstream A deliverable #2. Written 2026-10-24, updated after batch 3.
 
 ```
 .venv/Scripts/python.exe scripts/validate_dsa_specs.py
-  -> specs supplied: 20 | COMPLETE: 20 | INVALID: 0 | DRAFT: 88        exit 0
+  -> specs supplied: 30 | COMPLETE: 30 | INVALID: 0 | DRAFT: 78        exit 0
 .venv/Scripts/python.exe -m pytest backend/tests/test_dsa_specs.py -q
-  -> 28 passed in 0.64s
+  -> 38 passed
+.venv/Scripts/python.exe -m pytest backend/tests/test_dsa_grading_honesty.py -q
+  -> 6 passed
 .venv/Scripts/python.exe -c "…build_dsa_question_bank()…"
-  -> rows 108 | validated 20 | draft 88 | gradable 20
+  -> rows 108 | validated 30 | draft 78 | gradable 30
 ```
 
 Machine-readable per-problem state: `DSA_SPECIFICATION_COMPLETION.csv`.
@@ -18,173 +20,166 @@ External originality measurement: `DSA_ORIGINALITY_CHECK.md`.
 ## Where it started and where it is
 
 At the end of Phase 1 the honest figure was **0 of 108 gradable** — the catalogue was prose only.
-This session took it to **20 of 108**, with every one of the 20 machine-verified. The count went up
-only by making problems genuinely testable; nothing was re-labelled to look better.
+Three batches later it is **30 of 108**, every one machine-verified, and for the first time all
+twelve topics contain at least one gradable problem. The count rose only by making problems
+genuinely testable; nothing was re-labelled to look better.
 
-## What "validated" means now, and what changed today
+## What "validated" means, and what changed under it
 
-Previously `gradable` meant *"this id has an entry in dsa_specs.json"* — presence as proof. That was
-a real defect: a corrupt spec file was caught by a bare `except` and silently returned an empty set,
-degrading the entire curriculum to draft with no error anywhere.
+Early in this phase `gradable` meant *"this id has an entry in dsa_specs.json"* — presence as
+proof. That was a defect: a corrupt spec file was caught by a bare `except` and silently returned
+an empty set, demoting the entire curriculum to draft with no error anywhere.
 
-Now gradability is keyed to a **harness stamp**
+Gradability is now keyed to a **harness stamp**
 (`verification: {harness: "2026.10-harness-v1", result: "pass", validated_at, cases}`), written only
-by `validate_dsa_specs.py --stamp`, and `spec_status` has three states:
+by `validate_dsa_specs.py --stamp`:
 
 | state | meaning |
 |---|---|
-| `validated` | harness passed under the current version → `gradable: true` |
+| `validated` | the harness passed it under the current version → `gradable: true` |
 | `specified_unverified` | a spec exists but the current harness has not passed it |
 | `draft` | no spec at all |
 
 A missing file is a legitimate fresh checkout (all draft). A corrupt file **raises** instead of
-quietly demoting the bank. Bumping `DSA_HARNESS_VERSION` invalidates old stamps on purpose, so a
-spec cannot keep advertising gradability after the proof rule moves. Pinned by
-`test_gradability_needs_the_current_harness_stamp`, `test_missing_spec_file_is_drafts_not_a_crash`,
-`test_corrupt_spec_file_fails_loudly_instead_of_demoting_the_bank`.
+quietly demoting the bank. Bumping `DSA_HARNESS_VERSION` invalidates old stamps on purpose. The API
+overlays this state on every question payload (`_with_gradability`), so a database seeded before
+the harness existed cannot keep advertising drafts as gradable.
 
-The harness itself requires, per spec: all 11 fields present, the reference solution passing every
-example **and** every hidden test, and a deliberately wrong mutant **failing at least one** case. A
-spec whose mutant accidentally passes is INVALID — the tests have to have teeth.
+Per spec the harness requires all 11 fields, the reference solution passing every example **and**
+every hidden test, and a deliberately wrong mutant **failing at least one** case. A spec whose
+mutant accidentally passes is INVALID — the tests must have teeth.
 
-## Coverage: where the 20 actually are
+## Coverage: all twelve topics now have a grader
 
 | Topic | Validated | Total | Gap |
 |---|---|---|---|
 | LINKED | 7 | 8 | 1 |
 | TREES | 4 | 12 | 8 |
+| **GRAPHS** | **4** | 10 | 6 |
+| **BACKTRACK** | **3** | 8 | 5 |
+| **HEAPS** | **2** | 6 | 4 |
+| DP | 2 | 12 | 10 |
 | ARRAYS | 2 | 12 | 10 |
 | POINTERS | 2 | 10 | 8 |
-| DP | 1 | 12 | 11 |
 | BINSEARCH | 1 | 8 | 7 |
 | STACK | 1 | 8 | 7 |
 | GREEDY | 1 | 8 | 7 |
 | BITS | 1 | 6 | 5 |
-| **GRAPHS** | **0** | 10 | 10 |
-| **BACKTRACK** | **0** | 8 | 8 |
-| **HEAPS** | **0** | 6 | 6 |
-| **Total** | **20** | 108 | 88 |
+| **Total** | **30** | 108 | 78 |
 
-Difficulty of the 20: 10 Easy, 10 Medium, **0 Hard**.
+Batch 3 (10 specs, all lead-reviewed) closed the exact gap the audit called a blocker:
+`kth-largest-element`, `top-k-frequent-elements` (HEAPS); `course-schedule`,
+`number-of-connected-components`, `network-delay-time`, `word-ladder` (GRAPHS);
+`subsets`, `generate-parentheses`, `palindrome-partitioning` (BACKTRACK); `edit-distance` (DP).
 
-This table is the single most important line in the report, and it vindicates the instruction not to
-inflate: gradable coverage clustered in LINKED (7/8) precisely because linked-list answers are
-trivially comparable as arrays, while **the three topics that decide a campus screen — graphs,
-heaps, backtracking — have zero validated problems**. An audit flagged this; I re-derived it from
-the code and it is correct.
+**Review independence is uneven.** 20 of the 30 specs were authored by a subagent and reviewed by the lead (author ≠ reviewer). The first 10 were authored and reviewed by the same agent and still carry `reviewer: "pending"` — they are machine-validated but not independently reviewed, and that is recorded rather than papered over.
 
-Per-spec depth: hidden tests 4 (9 specs), 5 (4), 6 (4), 7 (3); examples 2 (10 specs), 1 (10 — the
-first batch); edge cases ≥3 everywhere; checkers **20/20 `exact`**, so
-`unordered`/`nested_unordered`/`float` were shipped unexercised by any real spec.
+Difficulty of the 30: **10 Easy, 18 Medium, 2 Hard** (`word-ladder`, `edit-distance`). The bank is
+no longer Hard-free, though two is still thin for a "crack a product company" claim.
 
-## Defects found and fixed today (all with tests)
+Hidden tests per spec: 4 (9 specs), 5 (7), 6 (8), 7 (5), 8 (1). Examples: 2 for 20 specs, 1 for the
+first 10. Edge cases ≥3 everywhere.
+
+Checkers: `exact` 26, `unordered` 3, `nested_unordered` 1. The previously untested checker paths are
+now both exercised by real content **and** unit-tested (`test_every_shipped_checker_is_exercised`).
+
+## Defects found and fixed (all with tests)
 
 1. **`unordered` accepted a string in place of a list.** `sorted("ab") == sorted(["a","b"])` is
-   `True`, so a learner answering `["a","b"]` with the bare string `"ab"` would have been graded
-   correct. Both unordered checkers now require list/tuple shapes. Pinned by
-   `test_every_shipped_checker_is_exercised`.
-2. **Presence-as-proof gradability** — replaced by the stamp (above).
-3. **Silent corruption fallback** in `_validated_spec_ids` — removed.
-4. **Two question ids were truncated mid-phrase**, one ending on a dangling hyphen
-   (`…construct-binary-tree-from-preorder-and-`). Slug cap raised to 48 (longest real slug is 47)
-   plus trailing-hyphen stripping.
+   `True`, so answering `["a","b"]` with `"ab"` graded correct. Both unordered checkers now require
+   list/tuple shapes.
+2. **Presence-as-proof gradability** — replaced by the stamp; the API now overlays it on read.
+3. **Silent corruption fallback** in `_validated_spec_ids` — removed; it raises.
+4. **Two question ids were truncated mid-phrase**, one ending on a dangling hyphen. Slug cap raised
+   to 48 (longest real slug is 47) with trailing-hyphen stripping.
 5. **One garbled statement** in the batch-1 BST spec rewritten before merge.
 
-Defect 4 is also the empirical proof of the drift detector: after the cap change, the validator
-immediately reported `INVALID dsa_pointers_006_…: question_id not in catalogue`, because ids are
-derived from title slugs. That coupling is a live hazard — re-wording a title orphans its spec and
-any stored attempts. It was caught by a test today rather than in production; the fix is to freeze
-ids in a manifest before any re-wording campaign.
+Defect 4 also proved the drift detector: after the cap change the validator immediately reported
+`INVALID dsa_pointers_006_…: question_id not in catalogue`, because ids derive from title slugs.
+That coupling is a live hazard — re-wording a title orphans its spec and stored attempts — and it
+was caught by a test rather than in production. Freeze ids in a manifest before any re-wording.
 
 ## Security boundary: measured, not assumed
 
-I probed the harness rather than trusting its docstring:
-
-| probe | result |
+| probe inside `load_function` | result |
 |---|---|
-| `().__class__.__bases__[0].__subclasses__()` inside `load_function` | **ESCAPED** — returned 245 classes |
+| `().__class__.__bases__[0].__subclasses__()` | **ESCAPED** — returned 245 classes |
 | `import os` | **blocked** — `ImportError` from the allowlist |
 
-So the restricted `exec` is an **authoring guardrail, not a sandbox**. It is safe for trusted,
-committed artefacts (reference and mutant solutions) and must never be pointed at a learner
-submission. `test_restricted_exec_is_a_guardrail_not_a_sandbox` pins both halves of that sentence,
-including the escape — if a future Python version closes it, the test tells us the documentation
-needs re-checking instead of letting the file grow quietly safer than the doc claims.
+The restricted `exec` is an **authoring guardrail, not a sandbox**. It is safe for trusted,
+committed artefacts and must never be pointed at a learner submission.
+`test_restricted_exec_is_a_guardrail_not_a_sandbox` pins both halves, including the escape, so if a
+future Python closes it the documentation gets re-checked instead of silently going stale.
 
-**Open and deliberately not half-fixed:** the harness has no per-case wall-clock budget. A looping
-reference hangs the validator. A correct cross-platform fix is a subprocess worker with a timeout;
-`signal.SIGALRM` does not exist on Windows, and shipping a timeout that silently no-ops on the
-platform this project runs on would be worse than the documented gap. NOT RUN; recommended next.
+**Open, deliberately not half-fixed:** no per-case wall-clock budget. A looping reference hangs the
+validator. A correct cross-platform fix is a subprocess worker; `signal.SIGALRM` does not exist on
+Windows, and shipping a timeout that no-ops on this platform would be worse than the documented gap.
+
+## The in-app judge was fabricated, and is gone
+
+Separate from the authoring harness: `/api/me/dsa/submissions/{run,submit}` used
+`_simulated_code_result`, which invented "Accepted", fake "Sample 1 / Sample 2 / Hidden edge" pass
+flags and runtime/memory numbers from a **token count**, and a submission therefore set
+`solved: true` and `mastery: 88`. A student could earn credit by writing code containing `def ` and
+`for`.
+
+It now returns `_static_code_review`: `executed: false`, `graded: false`, a list of labelled static
+signals, and a note that nothing was run. `submit_my_dsa_code` keeps `solved`, `mastery`,
+`best_submission_id` and `last_solved_at` at their previous values and records only
+`attempted: true`. The UI no longer promises that "passing the test suite updates your placement
+metrics", and the fake test-case chips are gone. Pinned by 6 tests in
+`backend/tests/test_dsa_grading_honesty.py`.
 
 ## Originality: the claim was too strong, so it was corrected
 
-The catalogue was sold internally as "108 **original** problems". I measured it against three public
-lists (`DSA_ORIGINALITY_CHECK.md`):
+Measured against three public lists (`DSA_ORIGINALITY_CHECK.md`):
 
 - **91 of 108 titles match a public canonical list verbatim**; 95/108 match at least one source;
   0/108 are invented names.
 - Difficulty agrees with the public list on 90 of 91 comparable titles.
-- **Expression overlap: 1 of 1,283 distinct 6-grams** across all `prompt` + `why` text — and that
-  one is a stock sentence ("connected components in an undirected graph").
-- Topic structure does not match any source (order concordance 15%/19%); no source's section
-  structure or ordering is reproduced.
+- **Expression overlap: 1 of 1,283 distinct 6-grams** across all `prompt` + `why` text, and that one
+  is a stock sentence.
+- Topic structure matches no source (order concordance 15%/19%).
 
-Verdict: **generic-naming coincidence, moderate confidence** — which is exactly what standard problem
-names do. But "original problems" is not a defensible phrase, so the wording was corrected in seven
-files (`dsa_catalog.py`, `README.md`, `docs/ARCHITECTURE.md`, `FEATURE_GUIDE_FOR_JUDGES.md`,
-`FINAL_PROJECT_DOCUMENTATION.md`, `PACIO_AUDIT.md` F-19, `PACIO_BACKLOG.md` BL-26 — the last two as
-dated corrections, not silent rewrites). The accurate claim: **canonical interview problems under an
-in-house 12-topic taxonomy, with prompts and rationale written here.** Anyone selling Pacio's
-curriculum as a proprietary content moat is overselling; the moat is the workflow, the tenant data
-and the verification.
+Verdict: **generic-naming coincidence, moderate confidence** — what standard problem names do. But
+"original problems" is not a defensible phrase, so the wording was corrected in seven files. The
+accurate claim: **canonical interview problems under an in-house 12-topic taxonomy, with prompts and
+rationale written here.** The moat is the workflow, the tenant data and the verification — not the
+problem list.
 
 ## One candidate rejected rather than faked
 
-`dsa_linked_008_copy_list_with_random_pointer` was **excluded** from batch 2. A correct deep copy
-serialises byte-identically to its input, so "return the input unchanged" passes every test — the
-actual skill (fresh node objects with remapped random pointers) is unobservable through the JSON
-in/out harness. Shipping a spec for it would have made the count 21 and the claim false. The honest
-options are a structural checker that compares object identity graphs, or leaving it prose-only.
-
-## Audit reconciliation (what I accepted, what I corrected)
-
-Accepted and now fixed: stamp-gated gradability, checker shape hole, silent corruption path, slug
-truncation. Accepted and **not** yet fixed, with reasons: zero graphs/heaps/backtracking coverage
-(sequence below), 0 Hard specs, 10 specs with a single example, all-`exact` checkers (three checkers
-now unit-tested but still unused by content), missing timeout. Corrected: the audit's headline
-originality BLOCKER was asserted from memory with no source fetched — measured, the real position is
-weaker than "copied" and stronger than "original", and the docs now say so. The audit's claim that
-Greenhouse's robots excluded our endpoint was also wrong in a different workstream; verified
-directly.
+`dsa_linked_008_copy_list_with_random_pointer` is **excluded**. A correct deep copy serialises
+byte-identically to its input, so "return the input unchanged" passes every test; the real skill
+(fresh node objects with remapped pointers) is unobservable through the JSON in/out harness. It
+would have made the count 31 and the claim false.
 
 ## What may be said about DSA today
 
-Allowed: "108 curated canonical problems across 12 patterns; **20 are auto-gradable and machine
-verified**; the rest are practice prompts with solutions and rationale."
+Allowed: "108 curated canonical problems across 12 patterns; **30 are auto-gradable and machine
+verified**, including graphs, heaps, backtracking and two Hard problems; the rest are practice
+prompts with solutions and rationale."
 
-Not allowed: "108 auto-gradable problems", "an original problem bank", or any grading claim about
-the 88 drafts. The frontend must not present drafts as gradable, and nothing may advertise
-company-wise "most asked DSA" statistics — no verified source for those exists.
+Not allowed: "108 auto-gradable problems", "an original problem bank", any grading claim about the
+78 drafts, or any company-wise "most asked DSA" statistic — no verified source for those exists.
 
-## Next 10 to validate, in this order
+## Next batch, in priority order
 
-1. `HEAPS` — merge k sorted lists, top-k / kth-largest via heap (2): topic has zero gradable items
-   and heaps are a standard campus-screen discriminator.
-2. `GRAPHS` — number of islands, course schedule / cycle detection, shortest path weighted (3):
-   largest zero-coverage topic; needs the `unordered`/`nested_unordered` checkers, which are now
-   at least unit-tested.
-3. `BACKTRACK` — permutations/subsets and one N-Queens-style count (2): zero coverage, and a
-   natural fit for `nested_unordered`.
-4. `DP` — one 2-D grid DP and one Hard (2): DP is 1-D only today and the bank has no Hard at all,
-   which undercuts a "interview ready" claim for top-tier placement cells.
+1. **TREES → 4 more** (traversal variants, LCA): the largest remaining gap in a high-frequency topic.
+2. **DP → 3 more**, including one 2-D grid DP: DP is thin and only one Hard exists.
+3. **GRAPHS → 2 more** (BFS on a grid, topological order output): grids are the common interview
+   framing.
+4. **BITS → 2 more** (count set bits, single number): the topic with the least coverage relative to
+   frequency in written rounds.
+5. Add a **third Hard** in BACKTRACK to balance the difficulty mix.
 
-Each must arrive with a reference that passes, a mutant that fails, and a stamp — not a title.
+Each must arrive with a reference that passes, a mutant that fails, and a stamp — never a title.
 
 ## GO / NO-GO for Workstream A
 
-**GO for the 20 validated problems** as genuinely gradable, evidence-backed, and reviewed under a
-harness whose own boundary has been measured.
+**GO for the 30 validated problems** as genuinely gradable, evidence-backed, and reviewed under a
+harness whose own boundary has been measured. Coverage is now broad enough to demo every topic.
 
-**NO-GO for marketing the bank as auto-gradable**, and NO-GO for adding new problems before graphs,
-heaps and backtracking have working graders. The catalogue is now honest before it is large; that is
-the order the mentor asked for.
+**NO-GO for marketing the bank as auto-gradable end to end**, and NO-GO for claiming interview
+readiness equal to a commercial platform: 78 drafts remain, Hard coverage is two problems, and the
+in-app runner still cannot execute learner code.

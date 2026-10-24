@@ -2,6 +2,7 @@
 
 Scope: the 108-problem Pacio DSA curriculum in `backend/dsa_catalog.py`.
 Status: complete — 48 findings (8 BLOCKER / 28 MAJOR / 12 MINOR), tallied in the Summary.
+**Post-audit note (2026-10-24, added later):** the gradable count has since moved from 20/108 to 30/108 and all twelve topics now have at least one grader, including graphs, heaps and backtracking. Which findings were fixed, and which remain open, is tracked in `DSA_VALIDATION_REPORT.md`. This document is kept as the record of what the audit found, not as the current state.
 Evidence labels per section are in the Summary table; the audit boundary is in Section 0.
 
 ## 0. Method And Evidence Boundary

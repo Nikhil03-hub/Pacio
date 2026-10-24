@@ -3,6 +3,8 @@
 Audit date 2026-10-23. Catalogue version `2026.10-pattern-v1` (12 topics, 108 problems).
 Source: `backend/dsa_catalog.py`. Findings below are machine-verified from that file.
 
+> **This is a catalogue-structure audit, not a validation status.** As of 2026-10-24, 30 of the 108 problems have machine-validated gradable specs (all twelve topics covered). For current per-problem validation state see `DSA_VALIDATION_REPORT.md` and `DSA_SPECIFICATION_COMPLETION.csv`.
+
 ## 1. Coverage
 
 Difficulty mix: **23 Easy / 75 Medium / 10 Hard** (21% / 69% / 9%).

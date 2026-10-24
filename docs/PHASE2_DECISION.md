@@ -5,14 +5,15 @@ commands in `IMPLEMENTATION_DIFF_REPORT.md`. Written 2026-10-24. Nothing was pus
 
 ## The gate
 
-**196 tests pass, every suite exit 0. Frontend builds clean. DSA validator: 20 complete, 0 invalid,
-88 drafts.** Base was 128 tests; this phase added 68 and two new suites.
+**Every suite passes and the frontend builds clean. DSA validator: 30 complete, 0 invalid, 78 drafts.**
+Base was 128 tests; this phase added two new suites and 78 tests, for 206. Exact counts are in
+`RELEASE_READINESS.md`.
 
 ## Workstream verdicts
 
 | Workstream | Verdict | What that means in practice |
 |---|---|---|
-| A — DSA gradability | **PARTIAL** | 20/108 problems are genuinely auto-gradable and harness-stamped; 88 are prose. Graphs, heaps and backtracking have **zero** validated problems, so "interview ready" is not yet a defensible claim. A fabricated grading path was removed from the student product. |
+| A — DSA gradability | **PARTIAL** | 30/108 problems are genuinely auto-gradable and harness-stamped (all twelve topics covered, including 4 graphs, 3 backtracking, 2 heaps and 2 Hard); 78 are prose. A fabricated grading path was removed from the student product, and the in-app runner still cannot execute learner code, so "interview ready" is not yet a defensible claim. |
 | B — Import infrastructure | **GO** | Registry, approval gate, provenance, PII refusal, dry-run, idempotency, per-document undo, rollback with conflict detection, audit trail — all proven on memory **and** real MongoDB against disposable databases that were then dropped. |
 | C — Source rights | **PARTIAL / mostly NO-GO** | 11 register verdicts corrected. Three open-source curriculum sources are cleared with attribution. **No institution or placement dataset is cleared for import.** KMIT is © All Rights Reserved; AICTE/AISHE need written consent; OGD's licence is not evidenced. |
 | D — Live jobs | **GO as prototype, NO-GO to ship** | Real ingestion works: 18 Indian postings from Groww and CRED, 100% canonical employer links, 144 body fields received and deliberately discarded, second poll a pure no-op. Ashby is refused by the robots gate (HTTP 401 on its own policy file), Greenhouse waits on an unreadable ToS, only Lever is conditionally allowed. |
@@ -54,4 +55,5 @@ The engineering is now honest and verifiable: the pipeline is gated and reversib
 gradability is evidence-backed rather than asserted, the UI no longer promises grading it cannot do,
 and every limitation is written down where the next engineer will find it. What is missing is not
 more code — it is permission to use the data that would make the product valuable, and enough
-validated problems in graphs, heaps and backtracking to walk into a placement cell and demo it.
+validated problems across the board — 78 still have no grader — to walk into a placement cell
+and demo it end to end.
