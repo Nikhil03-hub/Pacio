@@ -79,8 +79,10 @@ Last full run (2026-10-23): **128 automated tests passed** (32 hardening + 20 te
 - Without `MONGO_URL` the app runs in memory and **loses all data on cold start**.
 - No rate limiting, no MFA, no CI, no browser tests, no error monitoring.
 - Initial JS bundle is 884 kB gzipped; accessibility and mobile tables need work.
-- The DSA curriculum is now an original 12-topic / 108-problem pattern set written for this
-  product (the earlier third-party-derived catalogue was replaced on 2026-10-23).
+- The DSA curriculum is an in-house 12-topic / 108-problem pattern set: canonical interview
+  problems under our own taxonomy, with every prompt and rationale written here (the earlier
+  third-party-derived catalogue was replaced on 2026-10-23; provenance measured 2026-10-24 in
+  `docs/data/DSA_ORIGINALITY_CHECK.md`).
 
 ## Brand and rights status
 

@@ -73,7 +73,7 @@ This is the layer that makes judges say *"AI platform, not a dashboard."* All of
 - **AI Analysis.** A personalized action plan that combines DSA, aptitude, ATS, interviews, consistency, CGPA, and applications into one readiness verdict with a predicted package band and risk level, plus the top three things to fix.
 
 - **Readiness scoring.** The student's live 0–100 score with a six-component breakdown and band (Placement Ready → Needs Intervention).
-- **DSA tracker + in-browser code editor.** Tracks question-level progress across a curated 12-topic / 108-problem interview curriculum (original prompts and rationale), with a Monaco (VS Code-style) editor to solve and submit problems.
+- **DSA tracker + in-browser code editor.** Tracks question-level progress across a curated 12-topic / 108-problem interview curriculum - canonical problems under our own pattern taxonomy, with prompts and rationale written in-house, with a Monaco (VS Code-style) editor to solve and submit problems.
 
 - **Aptitude tracker.** Sectional aptitude performance (quant, reasoning, verbal, DI) with accuracy, speed, and mastery.
 - **ATS analysis flow.** Upload a résumé to get an ATS score, keyword-gap analysis, format quality, recruiter-match, and version history. *Why: turns static PDFs into measurable, improvable signals.*

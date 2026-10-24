@@ -1,8 +1,11 @@
-"""Original DSA interview curriculum for Pacio Campus Intelligence.
+"""DSA interview curriculum for Pacio Campus Intelligence, authored in-house.
 
-This is an independently authored, pattern-based curriculum. The topic taxonomy, the
-ordering, the selection of problems and every prompt below were written for this product;
-no third-party problem sheet, its section structure or its question list is reproduced.
+Honest description of provenance (verified 2026-10-24, see docs/data/DSA_ORIGINALITY_CHECK.md):
+the *problems* are canonical interview questions whose names appear in every public list of the
+subject - 91 of 108 titles match a public list verbatim, which is expected for standard names and
+is not a protectable expression. What is in-house is the 12-topic pattern taxonomy, the ordering,
+the selection weighting, and every prompt and rationale string (6-gram overlap with public sources:
+1 of 1,283 distinct 6-grams). No third-party sheet's section structure or ordering is reproduced.
 The pattern coverage follows widely reported interview practice (arrays/hashing, two
 pointers, sliding window, binary search, stacks, linked lists, trees, heaps, graphs,
 backtracking, dynamic programming, greedy/intervals, bits and maths); see
@@ -13,8 +16,10 @@ without importing the catalogue twice.
 """
 from __future__ import annotations
 
+import json
 import re
 from datetime import datetime, timezone
+from pathlib import Path
 
 CURRICULUM_VERSION = "2026.10-pattern-v1"
 
@@ -404,6 +409,34 @@ assert len(DSA_TOPICS) == 12, f"Expected 12 topics, got {len(DSA_TOPICS)}"
 assert DSA_TOTAL == 108, f"Curriculum drift: expected 108 problems, got {DSA_TOTAL}"
 
 
+# Bumped whenever the harness changes what "proven gradable" means, so an old stamp cannot
+# keep advertising a problem as auto-gradable after the proof rule has moved.
+DSA_HARNESS_VERSION = "2026.10-harness-v1"
+
+
+def _spec_states(path: Path | None = None) -> dict[str, str]:
+    """Question id -> validated | specified_unverified.
+
+    Having an entry in the spec file is not proof of gradability; the harness stamp is. A missing
+    file is a legitimate fresh checkout, so it yields no states. A corrupt file would silently
+    demote the entire curriculum to draft, so it is allowed to raise.
+    """
+    path = path or Path(__file__).with_name("dsa_specs.json")
+    if not path.exists():
+        return {}
+    states = {}
+    for spec in json.loads(path.read_text(encoding="utf-8")):
+        stamp = spec.get("verification") or {}
+        proven = (stamp.get("result") == "pass"
+                  and stamp.get("harness") == DSA_HARNESS_VERSION)
+        states[spec["question_id"]] = "validated" if proven else "specified_unverified"
+    return states
+
+
+SPEC_STATES = _spec_states()
+VALIDATED_SPEC_IDS = {qid for qid, state in SPEC_STATES.items() if state == "validated"}
+
+
 def _slug(value: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
 
@@ -418,10 +451,17 @@ def build_dsa_question_bank(now: datetime | None = None) -> list[dict]:
         for index, (title, pattern, difficulty, prompt, why) in enumerate(PROBLEMS[topic["code"]], start=1):
             global_order += 1
             slug = _slug(title)
+            # 48 keeps every title in the current catalogue whole; the longest slug is 47.
+            # The trailing-hyphen strip stops a cut slug from ending on a dangling separator.
+            question_id = f"dsa_{topic['code'].lower()}_{index:03d}_{slug[:48].rstrip('-')}"
+            state = SPEC_STATES.get(question_id, "draft")
+            validated = state == "validated"
             sub_code = _slug(pattern)[:40]
             seen_subtopics[sub_code] = seen_subtopics.get(sub_code, 0) + 1
             rows.append({
-                "question_id": f"dsa_{topic['code'].lower()}_{index:03d}_{slug[:40]}",
+                "question_id": question_id,
+                "spec_status": state,
+                "gradable": validated,
                 "sheet": "pacio_curriculum",
                 "topic_code": topic["code"],
                 "topic_name": topic["name"],

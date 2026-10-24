@@ -331,16 +331,17 @@ export default function StudentDSA() {
                 {execution?.result && (
                   <div className="border border-line bg-paper p-4 text-xs font-mono space-y-2">
                     <div className="flex justify-between">
-                      <span className={execution.result.status === "Accepted" ? "text-accent" : "text-ink"}>{execution.result.status}</span>
-                      <span>{execution.result.passed || 0}/{execution.result.total || 0} tests · {execution.result.runtime_ms || 0}ms · {execution.result.memory_kb || 0}KB</span>
+                      <span className="text-ink">{execution.result.status}</span>
+                      <span className="text-ink-400 uppercase tracking-[0.16em] text-[10px]">not executed · not graded</span>
                     </div>
                     {execution.result.output && <div className="text-ink-500">{execution.result.output}</div>}
                     {execution.result.errors && <div className="text-red-700">{execution.result.errors}</div>}
-                    <div className="grid grid-cols-3 gap-2">
-                      {(execution.result.test_cases || []).map((tc) => (
-                        <div key={tc.name} className={`border px-2 py-1 ${tc.passed ? "border-accent text-accent" : "border-line text-ink-400"}`}>{tc.name}</div>
-                      ))}
-                    </div>
+                    {(execution.result.signals || []).map((signal) => (
+                      <div key={signal.label} className={`flex gap-2 ${signal.met ? "text-accent" : "text-ink-400"}`}>
+                        <span aria-hidden="true">{signal.met ? "+" : "-"}</span><span>{signal.label}</span>
+                      </div>
+                    ))}
+                    {execution.result.note && <p className="text-ink-400 leading-relaxed">{execution.result.note}</p>}
                   </div>
                 )}
               </div>

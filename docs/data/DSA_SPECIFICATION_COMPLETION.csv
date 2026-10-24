@@ -1,0 +1,109 @@
+question_id,title,topic,difficulty,checker,cases,reference_pass,mutant_rejected,status,errors
+dsa_arrays_001_two-sum,Two Sum,ARRAYS,Easy,exact,5,True,True,COMPLETE,
+dsa_arrays_005_maximum-subarray,Maximum Subarray,ARRAYS,Medium,exact,5,True,True,COMPLETE,
+dsa_binsearch_001_binary-search,Binary Search,BINSEARCH,Easy,exact,5,True,True,COMPLETE,
+dsa_bits_001_single-number,Single Number,BITS,Easy,exact,5,True,True,COMPLETE,
+dsa_dp_001_climbing-stairs,Climbing Stairs,DP,Easy,exact,5,True,True,COMPLETE,
+dsa_greedy_001_merge-intervals,Merge Intervals,GREEDY,Medium,exact,5,True,True,COMPLETE,
+dsa_linked_001_reverse-linked-list,Reverse Linked List,LINKED,Easy,exact,5,True,True,COMPLETE,
+dsa_linked_002_merge-two-sorted-lists,Merge Two Sorted Lists,LINKED,Easy,exact,8,True,True,COMPLETE,
+dsa_linked_003_reorder-list,Reorder List,LINKED,Medium,exact,9,True,True,COMPLETE,
+dsa_linked_004_remove-nth-node-from-end,Remove Nth Node From End,LINKED,Medium,exact,8,True,True,COMPLETE,
+dsa_linked_005_linked-list-cycle,Linked List Cycle,LINKED,Easy,exact,9,True,True,COMPLETE,
+dsa_linked_006_linked-list-cycle-ii,Linked List Cycle II,LINKED,Medium,exact,8,True,True,COMPLETE,
+dsa_linked_007_add-two-numbers,Add Two Numbers,LINKED,Medium,exact,8,True,True,COMPLETE,
+dsa_pointers_004_container-with-most-water,Container With Most Water,POINTERS,Medium,exact,5,True,True,COMPLETE,
+dsa_pointers_006_longest-substring-without-repeating-characters,Longest Substring Without Repeating Characters,POINTERS,Medium,exact,5,True,True,COMPLETE,
+dsa_stack_001_valid-parentheses,Valid Parentheses,STACK,Easy,exact,6,True,True,COMPLETE,
+dsa_trees_001_maximum-depth-of-binary-tree,Maximum Depth of Binary Tree,TREES,Easy,exact,7,True,True,COMPLETE,
+dsa_trees_003_diameter-of-binary-tree,Diameter of Binary Tree,TREES,Easy,exact,7,True,True,COMPLETE,
+dsa_trees_006_binary-tree-level-order-traversal,Binary Tree Level Order Traversal,TREES,Medium,exact,7,True,True,COMPLETE,
+dsa_trees_009_validate-binary-search-tree,Validate Binary Search Tree,TREES,Medium,exact,9,True,True,COMPLETE,
+dsa_arrays_002_contains-duplicate,Contains Duplicate,ARRAYS,Easy,,0,False,False,DRAFT,no validated specification yet
+dsa_arrays_003_best-time-to-buy-and-sell-stock,Best Time to Buy and Sell Stock,ARRAYS,Easy,,0,False,False,DRAFT,no validated specification yet
+dsa_arrays_004_product-of-array-except-self,Product of Array Except Self,ARRAYS,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_arrays_006_maximum-product-subarray,Maximum Product Subarray,ARRAYS,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_arrays_007_rotate-array,Rotate Array,ARRAYS,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_arrays_008_move-zeroes,Move Zeroes,ARRAYS,Easy,,0,False,False,DRAFT,no validated specification yet
+dsa_arrays_009_merge-sorted-array,Merge Sorted Array,ARRAYS,Easy,,0,False,False,DRAFT,no validated specification yet
+dsa_arrays_010_find-all-duplicates-in-an-array,Find All Duplicates in an Array,ARRAYS,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_arrays_011_set-matrix-zeroes,Set Matrix Zeroes,ARRAYS,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_arrays_012_spiral-matrix,Spiral Matrix,ARRAYS,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_backtrack_001_subsets,Subsets,BACKTRACK,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_backtrack_002_combination-sum,Combination Sum,BACKTRACK,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_backtrack_003_permutations,Permutations,BACKTRACK,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_backtrack_004_word-search,Word Search,BACKTRACK,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_backtrack_005_palindrome-partitioning,Palindrome Partitioning,BACKTRACK,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_backtrack_006_n-queens,N-Queens,BACKTRACK,Hard,,0,False,False,DRAFT,no validated specification yet
+dsa_backtrack_007_letter-combinations-of-a-phone-number,Letter Combinations of a Phone Number,BACKTRACK,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_backtrack_008_generate-parentheses,Generate Parentheses,BACKTRACK,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_binsearch_002_search-insert-position,Search Insert Position,BINSEARCH,Easy,,0,False,False,DRAFT,no validated specification yet
+dsa_binsearch_003_first-and-last-position-of-a-target,First and Last Position of a Target,BINSEARCH,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_binsearch_004_search-in-rotated-sorted-array,Search in Rotated Sorted Array,BINSEARCH,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_binsearch_005_find-minimum-in-rotated-sorted-array,Find Minimum in Rotated Sorted Array,BINSEARCH,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_binsearch_006_koko-eating-bananas,Koko Eating Bananas,BINSEARCH,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_binsearch_007_capacity-to-ship-packages-within-d-days,Capacity to Ship Packages Within D Days,BINSEARCH,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_binsearch_008_median-of-two-sorted-arrays,Median of Two Sorted Arrays,BINSEARCH,Hard,,0,False,False,DRAFT,no validated specification yet
+dsa_bits_002_number-of-1-bits,Number of 1 Bits,BITS,Easy,,0,False,False,DRAFT,no validated specification yet
+dsa_bits_003_counting-bits,Counting Bits,BITS,Easy,,0,False,False,DRAFT,no validated specification yet
+dsa_bits_004_missing-number,Missing Number,BITS,Easy,,0,False,False,DRAFT,no validated specification yet
+dsa_bits_005_pow-x-n,"Pow(x, n)",BITS,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_bits_006_reverse-integer,Reverse Integer,BITS,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_dp_002_house-robber,House Robber,DP,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_dp_003_house-robber-ii,House Robber II,DP,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_dp_004_coin-change,Coin Change,DP,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_dp_005_longest-increasing-subsequence,Longest Increasing Subsequence,DP,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_dp_006_word-break,Word Break,DP,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_dp_007_longest-common-subsequence,Longest Common Subsequence,DP,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_dp_008_edit-distance,Edit Distance,DP,Hard,,0,False,False,DRAFT,no validated specification yet
+dsa_dp_009_partition-equal-subset-sum,Partition Equal Subset Sum,DP,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_dp_010_unique-paths,Unique Paths,DP,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_dp_011_decode-ways,Decode Ways,DP,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_dp_012_target-sum,Target Sum,DP,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_graphs_001_number-of-islands,Number of Islands,GRAPHS,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_graphs_002_clone-graph,Clone Graph,GRAPHS,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_graphs_003_max-area-of-island,Max Area of Island,GRAPHS,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_graphs_004_rotting-oranges,Rotting Oranges,GRAPHS,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_graphs_005_pacific-atlantic-water-flow,Pacific Atlantic Water Flow,GRAPHS,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_graphs_006_course-schedule,Course Schedule,GRAPHS,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_graphs_007_course-schedule-ii,Course Schedule II,GRAPHS,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_graphs_008_number-of-connected-components,Number of Connected Components,GRAPHS,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_graphs_009_word-ladder,Word Ladder,GRAPHS,Hard,,0,False,False,DRAFT,no validated specification yet
+dsa_graphs_010_network-delay-time,Network Delay Time,GRAPHS,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_greedy_002_insert-interval,Insert Interval,GREEDY,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_greedy_003_non-overlapping-intervals,Non-overlapping Intervals,GREEDY,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_greedy_004_meeting-rooms-ii,Meeting Rooms II,GREEDY,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_greedy_005_jump-game,Jump Game,GREEDY,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_greedy_006_jump-game-ii,Jump Game II,GREEDY,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_greedy_007_gas-station,Gas Station,GREEDY,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_greedy_008_partition-labels,Partition Labels,GREEDY,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_heaps_001_kth-largest-element-in-an-array,Kth Largest Element in an Array,HEAPS,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_heaps_002_top-k-frequent-elements,Top K Frequent Elements,HEAPS,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_heaps_003_k-closest-points-to-origin,K Closest Points to Origin,HEAPS,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_heaps_004_merge-k-sorted-lists,Merge K Sorted Lists,HEAPS,Hard,,0,False,False,DRAFT,no validated specification yet
+dsa_heaps_005_find-median-from-data-stream,Find Median from Data Stream,HEAPS,Hard,,0,False,False,DRAFT,no validated specification yet
+dsa_heaps_006_task-scheduler,Task Scheduler,HEAPS,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_linked_008_copy-list-with-random-pointer,Copy List with Random Pointer,LINKED,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_pointers_001_valid-palindrome,Valid Palindrome,POINTERS,Easy,,0,False,False,DRAFT,no validated specification yet
+dsa_pointers_002_two-sum-ii-sorted-input,Two Sum II (Sorted Input),POINTERS,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_pointers_003_3sum,3Sum,POINTERS,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_pointers_005_trapping-rain-water,Trapping Rain Water,POINTERS,Hard,,0,False,False,DRAFT,no validated specification yet
+dsa_pointers_007_longest-repeating-character-replacement,Longest Repeating Character Replacement,POINTERS,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_pointers_008_minimum-window-substring,Minimum Window Substring,POINTERS,Hard,,0,False,False,DRAFT,no validated specification yet
+dsa_pointers_009_find-all-anagrams-in-a-string,Find All Anagrams in a String,POINTERS,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_pointers_010_permutation-in-string,Permutation in String,POINTERS,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_stack_002_min-stack,Min Stack,STACK,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_stack_003_evaluate-reverse-polish-notation,Evaluate Reverse Polish Notation,STACK,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_stack_004_daily-temperatures,Daily Temperatures,STACK,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_stack_005_next-greater-element,Next Greater Element,STACK,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_stack_006_largest-rectangle-in-histogram,Largest Rectangle in Histogram,STACK,Hard,,0,False,False,DRAFT,no validated specification yet
+dsa_stack_007_asteroid-collision,Asteroid Collision,STACK,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_stack_008_decode-string,Decode String,STACK,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_trees_002_invert-binary-tree,Invert Binary Tree,TREES,Easy,,0,False,False,DRAFT,no validated specification yet
+dsa_trees_004_balanced-binary-tree,Balanced Binary Tree,TREES,Easy,,0,False,False,DRAFT,no validated specification yet
+dsa_trees_005_same-tree,Same Tree,TREES,Easy,,0,False,False,DRAFT,no validated specification yet
+dsa_trees_007_binary-tree-right-side-view,Binary Tree Right Side View,TREES,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_trees_008_lowest-common-ancestor-of-a-bst,Lowest Common Ancestor of a BST,TREES,Easy,,0,False,False,DRAFT,no validated specification yet
+dsa_trees_010_kth-smallest-element-in-a-bst,Kth Smallest Element in a BST,TREES,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_trees_011_construct-binary-tree-from-preorder-and-inorder,Construct Binary Tree from Preorder and Inorder,TREES,Medium,,0,False,False,DRAFT,no validated specification yet
+dsa_trees_012_serialize-and-deserialize-binary-tree,Serialize and Deserialize Binary Tree,TREES,Hard,,0,False,False,DRAFT,no validated specification yet

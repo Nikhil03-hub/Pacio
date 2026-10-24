@@ -182,7 +182,7 @@ export default function StudentDSAProblem() {
                 <div className="border-t border-b border-line py-5">
                   <div className="font-mono text-[10px] tracking-[0.24em] text-ink-400 mb-2 uppercase font-semibold">Problem Description</div>
                   <p className="font-serif text-sm text-ink-600 leading-relaxed">
-                    Solve the problem <strong>{question.title}</strong> ({question.subtopic_name}). Write your solution in the Monaco editor workspace, select your language context, run code against custom inputs, and submit when ready. Successfully passing the test suite compiles your results and updates your placement metrics.
+                    Solve the problem <strong>{question.title}</strong> ({question.subtopic_name}) in the Monaco editor and submit your approach. Pacio does not compile or run submitted code in this build, so a submission is recorded as an attempt with a static review of its structure - it is not graded, does not mark the problem solved, and does not change your placement metrics.
                   </p>
                 </div>
 
@@ -382,13 +382,16 @@ export default function StudentDSAProblem() {
                   <div className="font-mono text-[10px] tracking-[0.24em] text-ink-400 uppercase font-semibold">Console Results</div>
                   {result ? (
                     <div className="mt-4 space-y-3 text-sm animate-fade-in">
-                      <div className="flex justify-between items-baseline"><span className="font-display text-2xl text-accent font-bold">{result.status}</span><span className="font-mono text-xs">{result.passed || 0}/{result.total || 0} passed</span></div>
-                      <div className="font-mono text-[10px] text-ink-400">{result.runtime_ms || 0}ms / {result.memory_kb || 0}KB</div>
+                      <div className="flex justify-between items-baseline"><span className="font-display text-2xl text-ink font-bold">{result.status}</span><span className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-400">not executed · not graded</span></div>
+                      {(result.signals || []).map((signal) => (
+                        <div key={signal.label} className={`flex items-start gap-2 font-mono text-[11px] ${signal.met ? "text-accent" : "text-ink-400"}`}>
+                          <span aria-hidden="true">{signal.met ? "+" : "-"}</span><span>{signal.label}</span>
+                        </div>
+                      ))}
+                      {result.note && <p className="text-[11px] leading-relaxed text-ink-400 border-t border-line pt-2">{result.note}</p>}
                       {result.output && <div className="border border-line bg-paper p-3 font-mono text-[11px] leading-relaxed max-h-36 overflow-y-auto whitespace-pre-wrap">{result.output}</div>}
                       {result.errors && <div className="border border-red-200 bg-red-50 p-3 font-mono text-[11px] text-red-700 max-h-36 overflow-y-auto whitespace-pre-wrap">{result.errors}</div>}
-                      <div className="grid grid-cols-3 gap-1.5 pt-1">
-                        {(result.test_cases || []).map((tc) => <div key={tc.name} className={`border px-2 py-1.5 text-[9px] font-mono text-center truncate ${tc.passed ? "border-accent text-accent bg-accent/5 font-semibold" : "border-line text-ink-400 bg-bone-100"}`}>{tc.name}</div>)}
-                      </div>
+
                     </div>
                   ) : (
                     <div className="mt-4 text-xs text-ink-400 italic">No output yet. Write your code and click Run.</div>

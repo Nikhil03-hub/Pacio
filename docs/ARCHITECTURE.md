@@ -31,7 +31,7 @@ local development and any preview URL.
 | `backend/auth.py` | bcrypt, JWT issue/decode, `get_session_user`, `require_roles`, `require_same_institution` | 130 lines |
 | `backend/memory_db.py` | Mongo-compatible in-memory store (`$or`, `$in`, `$gte`, `$regex`, aggregation) | 231 lines |
 | `backend/seed_data.py` | Deterministic sample data generator | 1,278 lines |
-| `backend/dsa_catalog.py` | Original DSA curriculum (12 topics, 108 problems) | 450 lines |
+| `backend/dsa_catalog.py` | In-house DSA curriculum: canonical problems, own taxonomy and prompts (12 topics, 108 problems) | 450 lines |
 | `backend/intelligence_engine.py` | Readiness weights and per-student scoring | 345 lines |
 | `backend/reports.py` | PDF/CSV/ICS generation | 270 lines |
 | `backend/notification_service.py` | SendGrid + Telegram fan-out with always-on logging | 102 lines |

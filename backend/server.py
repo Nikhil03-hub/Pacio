@@ -2477,39 +2477,59 @@ async def dsa_toggle(body: dict, user=Depends(require_roles("student"))):
     return {"solved": row["solved"], "attempted": row["attempted"], "total": row["total"]}
 
 
-def _simulated_code_result(question: dict, language: str, code: str, custom_input: str = "") -> dict:
+_REVIEW_LANGUAGE_TOKENS = {
+    "python": ["def ", "return"],
+    "javascript": ["function", "const ", "let ", "return"],
+    "java": ["class", "public", "return"],
+    "cpp": ["#include", "int main", "return"],
+    "c++": ["#include", "int main", "return"],
+}
+_REVIEW_ALGORITHM_TOKENS = ["for", "while", "recursi", "map", "set", "sort", "dp",
+                            "queue", "stack", "heap", "hash", "binary", "dfs", "bfs"]
+
+
+def _static_code_review(question: dict, language: str, code: str, custom_input: str = "") -> dict:
+    """Describe what the submitted source looks like. Do not run it, and do not grade it.
+
+    Pacio has no secure execution sandbox yet. validate_dsa_specs.py proves its own restricted exec
+    is a guardrail, not a sandbox - a __mro__ walk escapes it - so pointing that machinery at learner
+    code would be unsafe. The function this replaces invented pass/fail verdicts from a token count
+    and let them rewrite a student's mastery and solved state, which fabricated the product's central
+    assessment number. Everything returned here is labelled as what it is: a static, non-authoritative
+    reading of the text.
+    """
     source = (code or "").strip()
+    lang = (language or "python").lower()
+    review = {
+        "kind": "static_review",
+        "executed": False,
+        "graded": False,
+        "auto_gradable": bool(question.get("gradable")),
+        "status": "Not executed",
+        "signals": [],
+        "output": "",
+        "errors": "",
+        "note": ("Pacio did not compile or run this code, so nothing here is a correctness verdict. "
+                 "Automated grading is disabled for every question in this build."),
+    }
     if not source:
-        return {"status": "Runtime Error", "passed": 0, "total": 3, "runtime_ms": 0, "memory_kb": 0, "output": "", "errors": "No code provided."}
-    language = (language or "python").lower()
-    language_tokens = {
-        "python": ["def ", "return", "print("],
-        "javascript": ["function", "const ", "let ", "return", "console.log"],
-        "java": ["class", "public", "return"],
-        "cpp": ["#include", "int main", "return"],
-        "c++": ["#include", "int main", "return"],
-    }
-    tokens = language_tokens.get(language, [])
-    structure_score = sum(1 for token in tokens if token in source)
-    has_complexity = any(token in source.lower() for token in ["for", "while", "map", "set", "sort", "dp", "queue", "stack", "hash"])
-    passed = min(3, structure_score + (1 if has_complexity else 0))
-    status = "Accepted" if passed >= 3 else "Wrong Answer" if passed else "Compilation Error"
-    runtime_ms = max(12, min(950, len(source) * 2 + (question.get("global_order", 1) % 70)))
-    memory_kb = 12000 + (len(source) * 3) + (question.get("order", 1) * 19)
-    return {
-        "status": status,
-        "passed": passed,
-        "total": 3,
-        "runtime_ms": runtime_ms,
-        "memory_kb": memory_kb,
-        "output": f"Custom input processed: {custom_input[:120]}" if custom_input else "Sample tests evaluated.",
-        "errors": "" if status != "Compilation Error" else f"Add a complete {language} solution structure before running.",
-        "test_cases": [
-            {"name": "Sample 1", "passed": passed >= 1},
-            {"name": "Sample 2", "passed": passed >= 2},
-            {"name": "Hidden edge", "passed": passed >= 3},
-        ],
-    }
+        review["note"] = "No code was submitted, so nothing was reviewed."
+        return review
+
+    for token in _REVIEW_LANGUAGE_TOKENS.get(lang, []):
+        review["signals"].append({"label": "uses " + token.strip(), "met": token in source})
+    review["signals"].append({
+        "label": "shows an algorithmic construct (loop, recursion or a named pattern)",
+        "met": any(token in source.lower() for token in _REVIEW_ALGORITHM_TOKENS)})
+    review["lines_of_code"] = len([line for line in source.splitlines() if line.strip()])
+    review["signals_met"] = sum(1 for signal in review["signals"] if signal["met"])
+    if custom_input:
+        review["output"] = ("Custom input was stored with this submission but never executed; only "
+                            "its first " + str(min(120, len(custom_input))) + " characters were kept.")
+    if not review["auto_gradable"]:
+        review["note"] += (" This question has no validated test specification yet, so even a real "
+                           "runner could not grade it.")
+    return review
 
 
 @app.get("/api/dsa/student/{student_id}/attempts")
@@ -2583,7 +2603,7 @@ async def run_my_dsa_code(body: dict, request: Request, user=Depends(require_rol
     question = await db.dsa_questions.find_one({"question_id": body.get("question_id")}, {"_id": 0})
     if not question:
         raise HTTPException(404, "question not found")
-    result = _simulated_code_result(question, body.get("language"), body.get("code", ""), body.get("custom_input", ""))
+    result = _static_code_review(question, body.get("language"), body.get("code", ""), body.get("custom_input", ""))
     record = {
         "submission_id": f"dsa_run_{uuid.uuid4().hex[:10]}",
         "student_id": student["student_id"],
@@ -2612,8 +2632,7 @@ async def submit_my_dsa_code(body: dict, request: Request, user=Depends(require_
     question = await db.dsa_questions.find_one({"question_id": body.get("question_id")}, {"_id": 0})
     if not question:
         raise HTTPException(404, "question not found")
-    result = _simulated_code_result(question, body.get("language"), body.get("code", ""), body.get("custom_input", ""))
-    accepted = result["status"] == "Accepted"
+    result = _static_code_review(question, body.get("language"), body.get("code", ""), body.get("custom_input", ""))
     now = datetime.now(timezone.utc).isoformat()
     record = {
         "submission_id": f"dsa_sub_{uuid.uuid4().hex[:10]}",
@@ -2628,11 +2647,13 @@ async def submit_my_dsa_code(body: dict, request: Request, user=Depends(require_
         "kind": "submit",
         "status": result["status"],
         "result": result,
-        "runtime_ms": result["runtime_ms"],
-        "memory_kb": result["memory_kb"],
+        "executed": False,
+        "graded": False,
         "created_at": now,
     }
     await db.dsa_code_submissions.insert_one(record)
+    existing = await db.dsa_question_progress.find_one(
+        {"student_id": student["student_id"], "question_id": question["question_id"]}, {"_id": 0}) or {}
     await db.dsa_question_progress.update_one(
         {"student_id": student["student_id"], "question_id": question["question_id"]},
         {"$set": {
@@ -2642,16 +2663,18 @@ async def submit_my_dsa_code(body: dict, request: Request, user=Depends(require_
             "question_id": question["question_id"],
             "topic_code": question["topic_code"],
             "subtopic_code": question["subtopic_code"],
-            "solved": accepted,
+            # A submission that was never executed cannot prove mastery, so `solved` and `mastery`
+            # keep their previous values and only `attempted` is asserted as a fact.
+            "solved": existing.get("solved", False),
             "attempted": True,
-            "mastery": 88 if accepted else 42,
+            "mastery": existing.get("mastery", 0),
             "revision_count": 0,
             "notes": body.get("notes", ""),
             "faculty_comments": [],
             "difficulty": question["difficulty"],
-            "last_solved_at": now if accepted else None,
+            "last_solved_at": existing.get("last_solved_at"),
             "last_submission_id": record["submission_id"],
-            "best_submission_id": record["submission_id"] if accepted else None,
+            "best_submission_id": existing.get("best_submission_id"),
             "updated_at": now,
         }},
         upsert=True,
